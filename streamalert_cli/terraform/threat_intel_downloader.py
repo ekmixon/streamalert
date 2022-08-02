@@ -59,9 +59,10 @@ def generate_threat_intel_downloader(config):
     }
 
     result['module']['threat_intel_downloader'] = generate_lambda(
-        '{}_streamalert_{}'.format(prefix, THREAT_INTEL_DOWNLOADER_NAME),
+        f'{prefix}_streamalert_{THREAT_INTEL_DOWNLOADER_NAME}',
         'streamalert.threat_intel_downloader.main.handler',
         tid_config,
         config,
     )
+
     return result

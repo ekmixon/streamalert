@@ -78,7 +78,7 @@ class DynamoDBDriver(PersistenceDriver):
 
     @property
     def id(self):
-        return '{}:{}'.format(self.driver_type, self._dynamo_db_table)
+        return f'{self.driver_type}:{self._dynamo_db_table}'
 
     def initialize(self):
         # Setup DynamoDB client
@@ -90,9 +90,8 @@ class DynamoDBDriver(PersistenceDriver):
             self._table = resource.Table(self._dynamo_db_table)
             _ = self._table.table_arn  # This is only here to blow up on invalid tables
         except ClientError as err:
-            message = (
-                'LookupTable ({}): Encountered error while connecting with DynamoDB: \'{}\''
-            ).format(self.id, err.response['Error']['Message'])
+            message = f"LookupTable ({self.id}): Encountered error while connecting with DynamoDB: \'{err.response['Error']['Message']}\'"
+
             raise LookupTablesInitializationError(message)
 
     def commit(self):
@@ -126,8 +125,9 @@ class DynamoDBDriver(PersistenceDriver):
 
             except (ClientError, ConnectTimeoutError, ReadTimeoutError):
                 raise LookupTablesInitializationError(
-                    'LookupTable ({}): Failure to set key'.format(self.id)
+                    f'LookupTable ({self.id}): Failure to set key'
                 )
+
 
         self._dirty_rows = {}
 
@@ -198,8 +198,9 @@ class DynamoDBDriver(PersistenceDriver):
                 self.id
             )
             raise LookupTablesInitializationError(
-                'LookupTable ({}): Reading from DynamoDB timed out'.format(self.id)
+                f'LookupTable ({self.id}): Reading from DynamoDB timed out'
             )
+
 
         if 'Item' not in response:
             self._cache.set_blank(key, self._cache_refresh_minutes)
@@ -234,11 +235,8 @@ class DynamoDBDriver(PersistenceDriver):
         if self._dynamo_db_sort_key:
             components = key.split(self._key_delimiter, 2)
             if len(components) != 2:
-                message = (
-                    'LookupTable ({}): Invalid key. The requested table requires a sort key, '
-                    'which the provided key (\'{}\') does not provide, given the configured '
-                    'delimiter: \'{}\''
-                ).format(self.id, key, self._key_delimiter)
+                message = f"LookupTable ({self.id}): Invalid key. The requested table requires a sort key, which the provided key (\'{key}\') does not provide, given the configured delimiter: \'{self._key_delimiter}\'"
+
                 raise LookupTablesInitializationError(message)
 
             return {

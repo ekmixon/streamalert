@@ -141,7 +141,7 @@ class TestAthenaPartitioner:
 
         log_mock.assert_called_with('The key %s does not match any regex, skipping',
                                     bad_key.decode('utf-8'))
-        assert_equal(result, dict())
+        assert_equal(result, {})
 
     @staticmethod
     def _s3_record(count):

@@ -124,12 +124,12 @@ class SlackOutput(OutputDispatcher):
         for index, message in enumerate(messages, start=1):
             title = 'Record:'
             if len(messages) > 1:
-                title = 'Record (Part {} of {}):'.format(index, len(messages))
+                title = f'Record (Part {index} of {len(messages)}):'
             rule_desc = ''
             # Only print the rule description on the first attachment
             if index == 1:
                 rule_desc = rule_description
-                rule_desc = '*Rule Description:*\n{}\n'.format(rule_desc)
+                rule_desc = f'*Rule Description:*\n{rule_desc}\n'
 
             # https://api.slack.com/docs/message-attachments#attachment_structure
             attachments.append({
@@ -312,7 +312,7 @@ class SlackOutput(OutputDispatcher):
                     Record (Part 1 of 2):
                     ...
         """
-        default_header_text = '*StreamAlert Rule Triggered: {}*'.format(alert.rule_name)
+        default_header_text = f'*StreamAlert Rule Triggered: {alert.rule_name}*'
         header_text = alert_publication.get('@slack.text', default_header_text)
 
         if '@slack.attachments' in alert_publication:
@@ -323,14 +323,8 @@ class SlackOutput(OutputDispatcher):
             # Default attachments
             attachments = cls._format_default_attachments(alert, alert_publication, header_text)
 
-        full_message = {
-            'text': header_text,
-            'mrkdwn': True,
-            'attachments': attachments
-        }
-
         # Return the json dict payload to be sent to slack
-        return full_message
+        return {'text': header_text, 'mrkdwn': True, 'attachments': attachments}
 
     @classmethod
     def _json_to_slack_mrkdwn(cls, json_values, indent_count):
@@ -351,7 +345,7 @@ class SlackOutput(OutputDispatcher):
         elif isinstance(json_values, list):
             all_lines = cls._json_list_to_text(json_values, tab, indent_count)
         else:
-            all_lines.append('{}'.format(json_values))
+            all_lines.append(f'{json_values}')
 
         return all_lines
 
@@ -371,17 +365,17 @@ class SlackOutput(OutputDispatcher):
         all_lines = []
         for key, value in sorted(json_values.items()):
             if isinstance(value, (dict, list)) and value:
-                all_lines.append('{}*{}:*'.format(tab*indent_count, key))
+                all_lines.append(f'{tab * indent_count}*{key}:*')
                 all_lines.extend(cls._json_to_slack_mrkdwn(value, indent_count+1))
             else:
                 new_lines = cls._json_to_slack_mrkdwn(value, indent_count+1)
                 if len(new_lines) == 1:
-                    all_lines.append('{}*{}:* {}'.format(tab*indent_count, key, new_lines[0]))
+                    all_lines.append(f'{tab * indent_count}*{key}:* {new_lines[0]}')
                 elif new_lines:
-                    all_lines.append('{}*{}:*'.format(tab*indent_count, key))
+                    all_lines.append(f'{tab * indent_count}*{key}:*')
                     all_lines.extend(new_lines)
                 else:
-                    all_lines.append('{}*{}:* {}'.format(tab*indent_count, key, value))
+                    all_lines.append(f'{tab * indent_count}*{key}:* {value}')
 
         return all_lines
 
@@ -401,17 +395,17 @@ class SlackOutput(OutputDispatcher):
         all_lines = []
         for index, value in enumerate(json_values):
             if isinstance(value, (dict, list)) and value:
-                all_lines.append('{}*[{}]*'.format(tab*indent_count, index+1))
+                all_lines.append(f'{tab * indent_count}*[{index + 1}]*')
                 all_lines.extend(cls._json_to_slack_mrkdwn(value, indent_count+1))
             else:
                 new_lines = cls._json_to_slack_mrkdwn(value, indent_count+1)
                 if len(new_lines) == 1:
-                    all_lines.append('{}*[{}]* {}'.format(tab*indent_count, index+1, new_lines[0]))
+                    all_lines.append(f'{tab * indent_count}*[{index + 1}]* {new_lines[0]}')
                 elif new_lines:
-                    all_lines.append('{}*[{}]*'.format(tab*indent_count, index+1))
+                    all_lines.append(f'{tab * indent_count}*[{index + 1}]*')
                     all_lines.extend(new_lines)
                 else:
-                    all_lines.append('{}*[{}]* {}'.format(tab*indent_count, index+1, value))
+                    all_lines.append(f'{tab * indent_count}*[{index + 1}]* {value}')
 
         return all_lines
 

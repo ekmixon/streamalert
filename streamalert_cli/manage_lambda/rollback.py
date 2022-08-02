@@ -115,9 +115,9 @@ class RollbackCommand(CLICommand):
         for func, suffix in functions.items():
             if suffix:  # A suffix implies this is a standard function naming convention
                 success = success and _rollback_production(
-                    client,
-                    '{}_streamalert_{}'.format(prefix, suffix)
+                    client, f'{prefix}_streamalert_{suffix}'
                 )
+
             elif func == 'apps':  # Apps need special handling due to unique naming
                 for cluster in clusters:
                     cluster_modules = config['clusters'][cluster]['modules']
@@ -127,8 +127,8 @@ class RollbackCommand(CLICommand):
             elif func == 'classifier':  # Classifers need special handling due to clustering
                 for cluster in clusters:
                     success = success and _rollback_production(
-                        client,
-                        '{}_{}_streamalert_{}'.format(prefix, cluster, func)
+                        client, f'{prefix}_{cluster}_streamalert_{func}'
                     )
+
 
         return success

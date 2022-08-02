@@ -158,10 +158,11 @@ class TerraformBuildCommand(CLICommand):
             return
 
         target_modules, valid = _get_valid_tf_targets(config, options.target)
-        if not valid:
-            return False
-
-        return terraform_runner(config, targets=target_modules if target_modules else None)
+        return (
+            terraform_runner(config, targets=target_modules or None)
+            if valid
+            else False
+        )
 
 
 class TerraformDestroyCommand(CLICommand):
@@ -208,14 +209,15 @@ class TerraformDestroyCommand(CLICommand):
 
         if options.target:
             target_modules, valid = _get_valid_tf_targets(config, options.target)
-            if not valid:
-                return False
-
-            return terraform_runner(
-                config,
-                destroy=True,
-                auto_approve=True,
-                targets=target_modules if target_modules else None
+            return (
+                terraform_runner(
+                    config,
+                    destroy=True,
+                    auto_approve=True,
+                    targets=target_modules or None,
+                )
+                if valid
+                else False
             )
 
         # Migrate back to local state so Terraform can successfully
@@ -225,11 +227,11 @@ class TerraformDestroyCommand(CLICommand):
                                           check_creds=False):
             return False
 
-        if not run_command(['terraform', 'init'], cwd=config.build_directory):
-            return False
-
-        # Destroy all of the infrastructure
-        return terraform_runner(config, destroy=True, auto_approve=True)
+        return (
+            terraform_runner(config, destroy=True, auto_approve=True)
+            if run_command(['terraform', 'init'], cwd=config.build_directory)
+            else False
+        )
 
 
 class TerraformListTargetsCommand(CLICommand):
@@ -298,11 +300,12 @@ def _get_valid_tf_targets(config, targets):
 
     for target in targets:
         matches = {
-            '{}.{}'.format(value_type, value) if value_type == 'module' else value
+            f'{value_type}.{value}' if value_type == 'module' else value
             for value_type, values in modules.items()
             for value in values
             if fnmatch(value, target)
         }
+
         if not matches:
             LOGGER.error('Invalid terraform target supplied: %s', target)
             continue
@@ -319,9 +322,10 @@ def _get_valid_tf_targets(config, targets):
 
 
 def get_tf_modules(config, generate=False):
-    if generate:
-        if not terraform_generate_handler(config=config, check_tf=False, check_creds=False):
-            return False
+    if generate and not terraform_generate_handler(
+        config=config, check_tf=False, check_creds=False
+    ):
+        return False
 
     modules = set()
     resources = set()
@@ -333,9 +337,12 @@ def get_tf_modules(config, generate=False):
                     tf_data = json.load(tf_file)
                     modules.update(set((tf_data['module'])))
                     resources.update(
-                        '{}.{}'.format(resource, value)
-                        for resource, values in tf_data.get('resource', {}).items()
+                        f'{resource}.{value}'
+                        for resource, values in tf_data.get(
+                            'resource', {}
+                        ).items()
                         for value in values
                     )
+
 
     return {'module': modules, 'resource': resources}

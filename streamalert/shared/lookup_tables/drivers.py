@@ -77,7 +77,7 @@ class EphemeralDriver(PersistenceDriver):
 
     @property
     def id(self):
-        return '{}:{}'.format(self.driver_type, 1)
+        return f'{self.driver_type}:1'
 
     def get(self, key, default=None):
         return self._cache.get(key, default)
@@ -99,7 +99,7 @@ class NullDriver(PersistenceDriver):
 
     @property
     def id(self):
-        return '{}:{}'.format(self.driver_type, 1)
+        return f'{self.driver_type}:1'
 
     def initialize(self):
         pass

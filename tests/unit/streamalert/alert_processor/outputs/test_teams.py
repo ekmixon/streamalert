@@ -214,8 +214,9 @@ class TestTeamsOutput:
         # Verify title
         loaded_message.title.assert_called()
         loaded_message.title.assert_called_with(
-            'StreamAlert Rule Triggered: {}'.format(alert.rule_name)
+            f'StreamAlert Rule Triggered: {alert.rule_name}'
         )
+
 
         # Verify text/description
         loaded_message.text.assert_called()
@@ -308,8 +309,9 @@ class TestTeamsOutput:
         # Verify title
         loaded_message.title.assert_called()
         loaded_message.title.assert_called_with(
-            'StreamAlert Rule Triggered: {}'.format(alert.rule_name)
+            f'StreamAlert Rule Triggered: {alert.rule_name}'
         )
+
 
         # Verify text/description
         loaded_message.text.assert_called()
@@ -356,8 +358,9 @@ class TestTeamsOutput:
         # Verify title
         loaded_message.title.assert_called()
         loaded_message.title.assert_called_with(
-            'StreamAlert Rule Triggered: {}'.format(alert.rule_name)
+            f'StreamAlert Rule Triggered: {alert.rule_name}'
         )
+
 
         # Verify text/description
         loaded_message.text.assert_called()
@@ -404,8 +407,9 @@ class TestTeamsOutput:
         # Verify title
         loaded_message.title.assert_called()
         loaded_message.title.assert_called_with(
-            'StreamAlert Rule Triggered: {}'.format(alert.rule_name)
+            f'StreamAlert Rule Triggered: {alert.rule_name}'
         )
+
 
         # Verify text/description
         loaded_message.text.assert_called()
@@ -465,8 +469,9 @@ class TestTeamsOutput:
         # Verify title
         loaded_message.title.assert_called()
         loaded_message.title.assert_called_with(
-            'StreamAlert Rule Triggered: {}'.format(alert.rule_name)
+            f'StreamAlert Rule Triggered: {alert.rule_name}'
         )
+
 
         # Verify text/description
         loaded_message.text.assert_called()
@@ -524,8 +529,9 @@ class TestTeamsOutput:
         # Verify title
         loaded_message.title.assert_called()
         loaded_message.title.assert_called_with(
-            'StreamAlert Rule Triggered: {}'.format(alert.rule_name)
+            f'StreamAlert Rule Triggered: {alert.rule_name}'
         )
+
 
         # Verify text/description
         loaded_message.text.assert_called()

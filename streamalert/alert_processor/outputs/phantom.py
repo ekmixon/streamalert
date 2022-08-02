@@ -82,23 +82,18 @@ class PhantomOutput(OutputDispatcher):
         """
         # Limit the query to 1 page, since we only care if one container exists with
         # this name.
-        params = {
-            '_filter_name': '"{}"'.format(rule_name),
-            'page_size': 1
-        }
+        params = {'_filter_name': f'"{rule_name}"', 'page_size': 1}
         try:
             resp = cls._get_request_retry(container_url, params, headers, False)
         except OutputRequestFailure:
             return False
 
         response = resp.json()
-        if not response:
-            return False
-
-        # If the count == 0 then we know there are no containers with this name and this
-        # will evaluate to False. Otherwise there is at least one item in the list
-        # of 'data' with a container id we can use
-        return response and response.get('count') and response.get('data')[0]['id']
+        return (
+            response and response.get('count') and response.get('data')[0]['id']
+            if response
+            else False
+        )
 
     @classmethod
     def _setup_container(cls, rule_name, rule_description, base_url, headers):
@@ -116,9 +111,9 @@ class PhantomOutput(OutputDispatcher):
         """
         container_url = os.path.join(base_url, cls.CONTAINER_ENDPOINT)
 
-        # Check to see if there is a container already created for this rule name
-        existing_id = cls._check_container_exists(rule_name, container_url, headers)
-        if existing_id:
+        if existing_id := cls._check_container_exists(
+            rule_name, container_url, headers
+        ):
             return existing_id
 
         # Try to use the rule_description from the rule as the container description
@@ -129,10 +124,7 @@ class PhantomOutput(OutputDispatcher):
             return False
 
         response = resp.json()
-        if not response:
-            return False
-
-        return response and response.get('id')
+        return response and response.get('id') if response else False
 
     def _dispatch(self, alert, descriptor):
         """Send alert to Phantom

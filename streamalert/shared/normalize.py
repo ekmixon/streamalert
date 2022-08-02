@@ -79,13 +79,11 @@ class NormalizedType:
         if len(self._parsed_params) != len(other.parsed_params):
             return False
 
-        for idx in range(len(self._parsed_params)):
-            if self._parsed_params[idx][CONST_PATH] == other.parsed_params[idx][CONST_PATH]:
-                continue
-
-            return False
-
-        return True
+        return all(
+            self._parsed_params[idx][CONST_PATH]
+            == other.parsed_params[idx][CONST_PATH]
+            for idx in range(len(self._parsed_params))
+        )
 
     @property
     def log_type(self):
@@ -154,8 +152,9 @@ class NormalizedType:
         """
         if not isinstance(params, list):
             raise ConfigError(
-                'Unsupported params {} for normalization. Convert params to a list'.format(params)
+                f'Unsupported params {params} for normalization. Convert params to a list'
             )
+
 
         if all(isinstance(param, str) for param in params):
             return self.CONST_STR
@@ -167,8 +166,7 @@ class NormalizedType:
 
         # FIXME: should we raise exception here? Or may just return False and log a warming message
         raise ConfigError(
-            ('Unsupported type(s) used in {} or missing keys. Valid types are str or dict and '
-             'valid keys are {}').format(params, self.VALID_KEYS)
+            f'Unsupported type(s) used in {params} or missing keys. Valid types are str or dict and valid keys are {self.VALID_KEYS}'
         )
 
 
@@ -209,9 +207,7 @@ class Normalizer:
         """
         results = {}
         for type_name, type_info in normalized_types.items():
-            result = list(cls._extract_values(record, type_info))
-
-            if result:
+            if result := list(cls._extract_values(record, type_info)):
                 results[type_name] = result
 
         if results:
@@ -230,10 +226,7 @@ class Normalizer:
                 break
             found_value = True
 
-        if not found_value:
-            return False, None
-
-        return True, value
+        return (True, value) if found_value else (False, None)
 
     @classmethod
     def _extract_values(cls, record, paths_to_normalize):
@@ -345,11 +338,15 @@ class Normalizer:
             set: The values for the normalized type specified
         """
         normalization_results = record.get(cls.NORMALIZATION_KEY, {}).get(datatype)
-        if not normalization_results:
-            # Return an empty set to be compatible existing rules calling this method which doesn't
-            # check if the return value is None or empty set.
-            return set()
-        return set(itertools.chain(*[result.get(CONST_VALUES) for result in normalization_results]))
+        return (
+            set(
+                itertools.chain(
+                    *[result.get(CONST_VALUES) for result in normalization_results]
+                )
+            )
+            if normalization_results
+            else set()
+        )
 
     @classmethod
     def load_from_config(cls, config):

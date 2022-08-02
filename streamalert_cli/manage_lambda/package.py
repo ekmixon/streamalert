@@ -105,7 +105,7 @@ class LambdaPackage:
             ignores (set=None): File globs to be ignored during the copying of the directory
         """
         # Copy the directory, skipping any files explicitly ignored
-        kwargs = {'ignore': shutil.ignore_patterns(*ignores)} if ignores else dict()
+        kwargs = {'ignore': shutil.ignore_patterns(*ignores)} if ignores else {}
         destination = destination or path
         destination = os.path.join(self.temp_package_path, destination)
         shutil.copytree(path, destination, **kwargs)

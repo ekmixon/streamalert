@@ -1620,10 +1620,7 @@ class RequestMocker:
 
         assert_false(
             failed,
-            (
-                'Failed to assert that mock was not called.\nOut of {} calls, '
-                'calls {} failed the condition.'
-            ).format(len(calls), ', '.join(['#{}'.format(idx) for idx in failed]))
+            f"Failed to assert that mock was not called.\nOut of {len(calls)} calls, calls {', '.join([f'#{idx}' for idx in failed])} failed the condition.",
         )
 
     @classmethod

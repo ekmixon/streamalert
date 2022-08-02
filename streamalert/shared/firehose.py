@@ -324,15 +324,18 @@ class FirehoseClient:
         base_name = stream_name[:cls.AWS_FIREHOSE_NAME_MAX_LEN - cls.FIREHOSE_NAME_MIN_HASH_LEN]
         if not base_name.endswith('_'):
             # make sure this ends in an underscore, but not 2
-            base_name = '{}_'.format(
-                base_name[:-1]
-            ) if base_name[-2] != '_' else '{}_'.format(base_name[:-2])
+            base_name = (
+                f'{base_name[:-1]}_'
+                if base_name[-2] != '_'
+                else f'{base_name[:-2]}_'
+            )
+
 
         # combine the base_name and first 8 chars of hash result together as new
         # stream name.
-        return '{}{}'.format(
-            base_name, hashlib.md5(stream_name.encode()).hexdigest()  # nosec
-        )[:cls.AWS_FIREHOSE_NAME_MAX_LEN]
+        return f'{base_name}{hashlib.md5(stream_name.encode()).hexdigest()}'[
+            : cls.AWS_FIREHOSE_NAME_MAX_LEN
+        ]
 
     @classmethod
     def artifacts_firehose_stream_name(cls, config):

@@ -45,7 +45,7 @@ class AwsKms:
         """
         try:
             if not key_alias.startswith('alias/'):
-                key_alias = 'alias/{}'.format(key_alias)
+                key_alias = f'alias/{key_alias}'
             client = boto3.client('kms', config=default_config(region=region))
             response = client.encrypt(KeyId=key_alias, Plaintext=plaintext_data)
             return response['CiphertextBlob']
@@ -230,7 +230,7 @@ class AwsSsm:
         client = boto3.client('ssm', config=default_config(region=region))
         result = False
 
-        key_id = 'alias/{}'.format(kms_key_alias)
+        key_id = f'alias/{kms_key_alias}'
         parameter_value = json.dumps(value) if isinstance(value, dict) else str(value)
         try:
             client.put_parameter(

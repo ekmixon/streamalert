@@ -98,17 +98,15 @@ class GithubOutput(OutputDispatcher):
         if not credentials:
             return False
 
-        username_password = "{}:{}".format(credentials['username'],
-                                           credentials['access_token'])
+        username_password = f"{credentials['username']}:{credentials['access_token']}"
         encoded_credentials = base64.b64encode(username_password.encode())
-        headers = {'Authorization': "Basic {}".format(encoded_credentials.decode())}
-        url = '{}/repos/{}/issues'.format(credentials['api'],
-                                          credentials['repository'])
+        headers = {'Authorization': f"Basic {encoded_credentials.decode()}"}
+        url = f"{credentials['api']}/repos/{credentials['repository']}/issues"
 
         publication = compose_alert(alert, self, descriptor)
 
         # Default presentation to the output
-        default_title = "StreamAlert: {}".format(alert.rule_name)
+        default_title = f"StreamAlert: {alert.rule_name}"
         default_body = "### Description\n{}\n\n### Event data\n\n```\n{}\n```".format(
             alert.rule_description,
             json.dumps(alert.record, indent=2, sort_keys=True)

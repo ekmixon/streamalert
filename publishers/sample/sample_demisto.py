@@ -18,17 +18,16 @@ def demisto_classification(alert, publication):
     # directly onto the Demisto output magic keys (example, @demisto.incident_type)
     if 'demisto' in alert.context:
         for key, value in alert.context['demisto'].items():
-            output_key = '@demisto.{}'.format(key)
+            output_key = f'@demisto.{key}'
             publication[output_key] = value
 
         return publication
 
     # If no context was explicitly declared, then we default to our global rules
     for code in GLOBAL_CLASSIFIERS:
-        payload = code(alert)
-        if payload:
+        if payload := code(alert):
             for key, value in payload:
-                output_key = '@demisto.{}'.format(key)
+                output_key = f'@demisto.{key}'
                 publication[output_key] = value
 
             return publication

@@ -22,10 +22,4 @@ def cloudtrail_security_group_ingress_anywhere(rec):
     ipv4_cidrs = get_keys(rec['detail']['requestParameters'], 'cidrIp')
     ipv6_cidrs = get_keys(rec['detail']['requestParameters'], 'cidrIpv6')
 
-    if '0.0.0.0/0' in ipv4_cidrs:
-        return True
-
-    if '::/0' in ipv6_cidrs:
-        return True
-
-    return False
+    return True if '0.0.0.0/0' in ipv4_cidrs else '::/0' in ipv6_cidrs

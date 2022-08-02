@@ -46,9 +46,7 @@ class TestAthenaClient:
         prefix = config['global']['account']['prefix']
 
         self.client = AthenaClient(
-            self._db_name,
-            's3://{}-streamalert-athena-results'.format(prefix),
-            'unit-test'
+            self._db_name, f's3://{prefix}-streamalert-athena-results', 'unit-test'
         )
 
     @patch('streamalert.shared.athena.datetime')
@@ -57,7 +55,7 @@ class TestAthenaClient:
         date_now = datetime.utcnow()
         date_mock.utcnow.return_value = date_now
         date_format = date_now.strftime('%Y/%m/%d/%H')
-        expected_path = 's3://test-streamalert-athena-results/unit-test/{}'.format(date_format)
+        expected_path = f's3://test-streamalert-athena-results/unit-test/{date_format}'
         with patch.dict(os.environ, {'AWS_DEFAULT_REGION': 'us-west-1'}):
             client = AthenaClient(
                 self._db_name,

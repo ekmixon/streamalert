@@ -155,7 +155,7 @@ class TestAppIntegration:
         assert_equal(self._app.required_auth_info(), expected_result)
 
         auth_mock.return_value = None
-        assert_equal(self._app.required_auth_info(), dict())
+        assert_equal(self._app.required_auth_info(), {})
 
     @patch('logging.Logger.error')
     def test_check_http_response_bad(self, log_mock):

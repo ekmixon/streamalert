@@ -140,9 +140,9 @@ class TestSlackOutput:
         alert = get_random_alert(10, rule_name, True)
         output = MagicMock(spec=SlackOutput)
         alert_publication = compose_alert(alert, output, 'asdf')
-        alert_publication['@slack.attachments'] = []
-        for _ in range(SlackOutput.MAX_ATTACHMENTS + 1):
-            alert_publication['@slack.attachments'].append({'text': 'yay'})
+        alert_publication['@slack.attachments'] = [
+            {'text': 'yay'} for _ in range(SlackOutput.MAX_ATTACHMENTS + 1)
+        ]
 
         loaded_message = SlackOutput._format_message(alert, alert_publication)
 
@@ -307,7 +307,7 @@ class TestSlackOutput:
     def test_dispatch_success(self, url_mock, log_mock):
         """SlackOutput - Dispatch Success"""
         url_mock.return_value.status_code = 200
-        url_mock.return_value.json.return_value = dict()
+        url_mock.return_value.json.return_value = {}
 
         assert_true(self._dispatcher.dispatch(get_alert(), self.OUTPUT))
 

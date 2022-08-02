@@ -154,7 +154,7 @@ def get_database_name(config):
     prefix = config['global']['account']['prefix']
     athena_config = config['lambda'].get('athena_partitioner_config')
 
-    return athena_config.get('database_name', '{}_streamalert'.format(prefix))
+    return athena_config.get('database_name', f'{prefix}_streamalert')
 
 def get_data_file_format(config):
     """Get the data store format using the current config settings

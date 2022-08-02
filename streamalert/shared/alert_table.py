@@ -48,9 +48,7 @@ class AlertTable:
         """
         while True:
             response = func(**func_kwargs)
-            for item in response.get('Items', []):
-                yield item
-
+            yield from response.get('Items', [])
             if response.get('LastEvaluatedKey'):
                 func_kwargs['ExclusiveStartKey'] = response['LastEvaluatedKey']
             else:
@@ -113,8 +111,7 @@ class AlertTable:
 
             'KeyConditionExpression': Key('RuleName').eq(rule_name)
         }
-        for item in self._paginate(self._table.query, kwargs):
-            yield item
+        yield from self._paginate(self._table.query, kwargs)
 
     def get_alert_record(self, rule_name, alert_id):
         """Get a single alert record from the alerts table.

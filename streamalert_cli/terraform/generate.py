@@ -100,13 +100,8 @@ def generate_s3_bucket(bucket, logging, **kwargs):
         'bucket': bucket,
         'acl': kwargs.get('acl', 'private'),
         'force_destroy': kwargs.get('force_destroy', True),
-        'versioning': {
-            'enabled': kwargs.get('versioning', True)
-        },
-        'logging': {
-            'target_bucket': logging,
-            'target_prefix': '{}/'.format(bucket)
-        },
+        'versioning': {'enabled': kwargs.get('versioning', True)},
+        'logging': {'target_bucket': logging, 'target_prefix': f'{bucket}/'},
         'server_side_encryption_configuration': {
             'rule': {
                 'apply_server_side_encryption_by_default': {
@@ -114,35 +109,35 @@ def generate_s3_bucket(bucket, logging, **kwargs):
                 }
             }
         },
-        'policy': json.dumps({
-            'Version': '2012-10-17',
-            'Statement': [
-                {
-                    'Sid': 'ForceSSLOnlyAccess',
-                    'Effect': 'Deny',
-                    'Principal': '*',
-                    'Action': 's3:*',
-                    'Resource': [
-                        'arn:aws:s3:::{}/*'.format(bucket),
-                        'arn:aws:s3:::{}'.format(bucket)
-                    ],
-                    'Condition': {
-                        'Bool': {
-                            'aws:SecureTransport': 'false'
-                        }
+        'policy': json.dumps(
+            {
+                'Version': '2012-10-17',
+                'Statement': [
+                    {
+                        'Sid': 'ForceSSLOnlyAccess',
+                        'Effect': 'Deny',
+                        'Principal': '*',
+                        'Action': 's3:*',
+                        'Resource': [
+                            f'arn:aws:s3:::{bucket}/*',
+                            f'arn:aws:s3:::{bucket}',
+                        ],
+                        'Condition': {
+                            'Bool': {'aws:SecureTransport': 'false'}
+                        },
                     }
-                }
-            ]
-        })
+                ],
+            }
+        ),
     }
+
 
     if sse_algorithm == 'aws:kms':
         s3_bucket['server_side_encryption_configuration']['rule'][
             'apply_server_side_encryption_by_default']['kms_master_key_id'] = (
                 '${aws_kms_key.server_side_encryption.key_id}')
 
-    lifecycle_rule = kwargs.get('lifecycle_rule')
-    if lifecycle_rule:
+    if lifecycle_rule := kwargs.get('lifecycle_rule'):
         s3_bucket['lifecycle_rule'] = lifecycle_rule
 
     return s3_bucket
@@ -164,9 +159,8 @@ def generate_main(config, init=False):
 
     logging_bucket, create_logging_bucket = s3_access_logging_bucket(config)
 
-    state_lock_table_name = '{}_streamalert_terraform_state_lock'.format(
-        config['global']['account']['prefix']
-    )
+    state_lock_table_name = f"{config['global']['account']['prefix']}_streamalert_terraform_state_lock"
+
     # Setup the Backend depending on the deployment phase.
     # When first setting up StreamAlert, the Terraform statefile
     # is stored locally.  After the first dependencies are created,
@@ -179,10 +173,9 @@ def generate_main(config, init=False):
         terraform_bucket_name, _ = terraform_state_bucket(config)
         main_dict['terraform']['backend']['s3'] = {
             'bucket': terraform_bucket_name,
-            'key': config['global'].get('terraform', {}).get(
-                'state_key_name',
-                'streamalert_state/terraform.tfstate'
-            ),
+            'key': config['global']
+            .get('terraform', {})
+            .get('state_key_name', 'streamalert_state/terraform.tfstate'),
             'region': config['global']['account']['region'],
             'encrypt': True,
             'dynamodb_table': state_lock_table_name,
@@ -190,10 +183,11 @@ def generate_main(config, init=False):
             'kms_key_id': 'alias/{}'.format(
                 config['global']['account'].get(
                     'kms_key_alias',
-                    '{}_streamalert_secrets'.format(config['global']['account']['prefix'])
+                    f"{config['global']['account']['prefix']}_streamalert_secrets",
                 )
             ),
         }
+
 
     # Configure initial S3 buckets
     main_dict['resource']['aws_s3_bucket'] = {
@@ -254,39 +248,47 @@ def generate_main(config, init=False):
     main_dict['resource']['aws_kms_key']['server_side_encryption'] = {
         'enable_key_rotation': True,
         'description': 'StreamAlert S3 Server-Side Encryption',
-        'policy': json.dumps({
-            'Version': '2012-10-17',
-            'Statement': [
-                {
-                    'Sid': 'Enable IAM User Permissions',
-                    'Effect': 'Allow',
-                    'Principal': {
-                        'AWS': 'arn:aws:iam::{}:root'.format(
-                            config['global']['account']['aws_account_id']
-                        )
+        'policy': json.dumps(
+            {
+                'Version': '2012-10-17',
+                'Statement': [
+                    {
+                        'Sid': 'Enable IAM User Permissions',
+                        'Effect': 'Allow',
+                        'Principal': {
+                            'AWS': f"arn:aws:iam::{config['global']['account']['aws_account_id']}:root"
+                        },
+                        'Action': 'kms:*',
+                        'Resource': '*',
                     },
-                    'Action': 'kms:*',
-                    'Resource': '*'
-                },
-                {
-                    'Sid': 'Allow principals in the account to use the key',
-                    'Effect': 'Allow',
-                    'Principal': '*',
-                    'Action': ['kms:Decrypt', 'kms:GenerateDataKey*', 'kms:Encrypt'],
-                    'Resource': '*',
-                    'Condition': {
-                        'StringEquals': {
-                            'kms:CallerAccount': config['global']['account']['aws_account_id']
-                        }
-                    }
-                }
-            ]
-        })
+                    {
+                        'Sid': 'Allow principals in the account to use the key',
+                        'Effect': 'Allow',
+                        'Principal': '*',
+                        'Action': [
+                            'kms:Decrypt',
+                            'kms:GenerateDataKey*',
+                            'kms:Encrypt',
+                        ],
+                        'Resource': '*',
+                        'Condition': {
+                            'StringEquals': {
+                                'kms:CallerAccount': config['global'][
+                                    'account'
+                                ]['aws_account_id']
+                            }
+                        },
+                    },
+                ],
+            }
+        ),
     }
+
     main_dict['resource']['aws_kms_alias']['server_side_encryption'] = {
-        'name': 'alias/{}_server-side-encryption'.format(config['global']['account']['prefix']),
-        'target_key_id': '${aws_kms_key.server_side_encryption.key_id}'
+        'name': f"alias/{config['global']['account']['prefix']}_server-side-encryption",
+        'target_key_id': '${aws_kms_key.server_side_encryption.key_id}',
     }
+
 
     main_dict['resource']['aws_kms_key']['streamalert_secrets'] = {
         'enable_key_rotation': True,
@@ -296,11 +298,12 @@ def generate_main(config, init=False):
         'name': 'alias/{}'.format(
             config['global']['account'].get(
                 'kms_key_alias',
-                '{}_streamalert_secrets'.format(config['global']['account']['prefix'])
+                f"{config['global']['account']['prefix']}_streamalert_secrets",
             )
         ),
-        'target_key_id': '${aws_kms_key.streamalert_secrets.key_id}'
+        'target_key_id': '${aws_kms_key.streamalert_secrets.key_id}',
     }
+
 
     # Global infrastructure settings
     topic_name, create_topic = monitoring_topic_name(config)
@@ -331,38 +334,48 @@ def generate_cluster(config, cluster_name):
 
     generate_cluster_cloudwatch_metric_alarms(cluster_name, cluster_dict, config)
 
-    if modules.get('cloudwatch_monitoring', {}).get('enabled'):
-        if not generate_monitoring(cluster_name, cluster_dict, config):
-            return
+    if modules.get('cloudwatch_monitoring', {}).get(
+        'enabled'
+    ) and not generate_monitoring(cluster_name, cluster_dict, config):
+        return
 
-    if modules.get('kinesis'):
-        if not generate_kinesis_streams(cluster_name, cluster_dict, config):
-            return
+    if modules.get('kinesis') and not generate_kinesis_streams(
+        cluster_name, cluster_dict, config
+    ):
+        return
 
-    if modules.get('kinesis_events'):
-        if not generate_kinesis_events(cluster_name, cluster_dict, config):
-            return
+    if modules.get('kinesis_events') and not generate_kinesis_events(
+        cluster_name, cluster_dict, config
+    ):
+        return
 
-    if modules.get('cloudtrail'):
-        if not generate_cloudtrail(cluster_name, cluster_dict, config):
-            return
+    if modules.get('cloudtrail') and not generate_cloudtrail(
+        cluster_name, cluster_dict, config
+    ):
+        return
 
     # purposely not using .get, since no extra settings are required for this module
-    if 'cloudwatch_events' in modules:
-        if not generate_cloudwatch_events(cluster_name, cluster_dict, config):
-            return
+    if 'cloudwatch_events' in modules and not generate_cloudwatch_events(
+        cluster_name, cluster_dict, config
+    ):
+        return
 
-    if modules.get('cloudwatch_logs_destination'):
-        if not generate_cloudwatch_destinations(cluster_name, cluster_dict, config):
-            return
+    if modules.get(
+        'cloudwatch_logs_destination'
+    ) and not generate_cloudwatch_destinations(
+        cluster_name, cluster_dict, config
+    ):
+        return
 
-    if modules.get('flow_logs'):
-        if not generate_flow_logs(cluster_name, cluster_dict, config):
-            return
+    if modules.get('flow_logs') and not generate_flow_logs(
+        cluster_name, cluster_dict, config
+    ):
+        return
 
-    if modules.get('s3_events'):
-        if not generate_s3_events(cluster_name, cluster_dict, config):
-            return
+    if modules.get('s3_events') and not generate_s3_events(
+        cluster_name, cluster_dict, config
+    ):
+        return
 
     generate_apps(cluster_name, cluster_dict, config)
 
@@ -424,21 +437,19 @@ def terraform_generate_handler(config, init=False, check_tf=True, check_creds=Tr
                 'An error was generated while creating the %s cluster', cluster)
             return False
 
-        file_name = '{}.tf.json'.format(cluster)
+        file_name = f'{cluster}.tf.json'
         _create_terraform_module_file(
             cluster_dict,
             os.path.join(config.build_directory, file_name),
         )
 
-    metric_filters = generate_aggregate_cloudwatch_metric_filters(config)
-    if metric_filters:
+    if metric_filters := generate_aggregate_cloudwatch_metric_filters(config):
         _create_terraform_module_file(
             metric_filters,
             os.path.join(config.build_directory, 'metric_filters.tf.json')
         )
 
-    metric_alarms = generate_aggregate_cloudwatch_metric_alarms(config)
-    if metric_alarms:
+    if metric_alarms := generate_aggregate_cloudwatch_metric_alarms(config):
         _create_terraform_module_file(
             metric_alarms,
             os.path.join(config.build_directory, 'metric_alarms.tf.json')
@@ -608,10 +619,13 @@ def generate_global_lambda_settings(
         tf_tmp_file (str): filename of terraform file, generated by CLI.
         message (str): Message will be logged by LOGGER.
     """
-    tf_tmp_file = os.path.join(config.build_directory, '{}.tf.json'.format(tf_tmp_file_name))
+    tf_tmp_file = os.path.join(
+        config.build_directory, f'{tf_tmp_file_name}.tf.json'
+    )
+
 
     if required and conf_name not in config['lambda']:
-        message = 'Required configuration missing in lambda.json: {}'.format(conf_name)
+        message = f'Required configuration missing in lambda.json: {conf_name}'
         raise ConfigError(message)
 
     if not config['lambda'].get(conf_name):
@@ -620,8 +634,7 @@ def generate_global_lambda_settings(
         return
 
     if config['lambda'][conf_name].get('enabled', True):
-        generated_config = generate_func(config=config)
-        if generated_config:
+        if generated_config := generate_func(config=config):
             _create_terraform_module_file(generated_config, tf_tmp_file)
     else:
         remove_temp_terraform_file(tf_tmp_file)
@@ -637,7 +650,7 @@ def remove_temp_terraform_file(tf_tmp_file, extra=None):
     if extra:
         LOGGER.info(extra)
 
-    message = 'Removing old Terraform file: {}'.format(tf_tmp_file)
+    message = f'Removing old Terraform file: {tf_tmp_file}'
     if os.path.isfile(tf_tmp_file):
         LOGGER.info(message)
         os.remove(tf_tmp_file)
@@ -672,9 +685,10 @@ def _generate_global_module(config):
     # avoids storing defaults in mulitple locations
     if 'alerts_table' in config['global']['infrastructure']:
         for setting in {'read_capacity', 'write_capacity'}:
-            value = config['global']['infrastructure']['alerts_table'].get(setting)
-            if value:
-                global_module['alerts_table_{}'.format(setting)] = value
+            if value := config['global']['infrastructure']['alerts_table'].get(
+                setting
+            ):
+                global_module[f'alerts_table_{setting}'] = value
 
     alert_fh_settings_with_defaults = {
         'bucket_name',
@@ -685,20 +699,21 @@ def _generate_global_module(config):
 
     if 'alerts_firehose' in config['global']['infrastructure']:
         for setting in alert_fh_settings_with_defaults:
-            value = config['global']['infrastructure']['alerts_firehose'].get(setting)
-            if not value:
-                continue
+            if value := config['global']['infrastructure'][
+                'alerts_firehose'
+            ].get(setting):
+                global_module[f'alerts_firehose_{setting}'] = value
 
-            global_module['alerts_firehose_{}'.format(setting)] = value
-
-    if 'rule_staging' in config['global']['infrastructure']:
-        if config['global']['infrastructure']['rule_staging'].get('enabled'):
-            global_module['enable_rule_staging'] = True
-            for setting in {'table_read_capacity', 'table_write_capacity'}:
-                value = config['global']['infrastructure']['rule_staging'].get(setting)
-                if value:
+    if 'rule_staging' in config['global']['infrastructure'] and config[
+        'global'
+    ]['infrastructure']['rule_staging'].get('enabled'):
+        global_module['enable_rule_staging'] = True
+        for setting in {'table_read_capacity', 'table_write_capacity'}:
+            if value := config['global']['infrastructure']['rule_staging'].get(
+                setting
+            ):
                     # Defaults are set for this in the terraform module, so skip
-                    global_module['rules_{}'.format(setting)] = value
+                global_module[f'rules_{setting}'] = value
 
     return global_module
 

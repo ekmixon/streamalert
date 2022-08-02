@@ -86,8 +86,8 @@ class OneLoginApp(AppIntegration):
         if self._auth_headers:
             return True
 
-        authorization = 'client_id: {}, client_secret: {}'.format(
-            self._config.auth['client_id'], self._config.auth['client_secret'])
+        authorization = f"client_id: {self._config.auth['client_id']}, client_secret: {self._config.auth['client_secret']}"
+
 
         headers_token = {'Authorization': authorization,
                          'Content-Type': 'application/json'}
@@ -103,17 +103,14 @@ class OneLoginApp(AppIntegration):
             LOGGER.error('[%s] Response invalid, could not generate headers', self)
             return False
 
-        bearer = 'bearer:{}'.format(response.get('access_token'))
+        bearer = f"bearer:{response.get('access_token')}"
         self._auth_headers = {'Authorization': bearer}
 
         return True
 
     def _gather_logs(self):
         """Gather the authentication log events."""
-        if not self._generate_headers():
-            return False
-
-        return self._get_onelogin_events()
+        return self._get_onelogin_events() if self._generate_headers() else False
 
     def _set_rate_limit_sleep(self):
         """Get the number of seconds we need to sleep until we are clear to continue"""

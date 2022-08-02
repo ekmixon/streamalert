@@ -148,7 +148,7 @@ class TestJiraOutput:
         # setup unsuccesful auth response
         post_mock.return_value.status_code = 400
         post_mock.return_value.content = 'content'
-        post_mock.return_value.json.return_value = dict()
+        post_mock.return_value.json.return_value = {}
 
         assert_false(self._dispatcher.dispatch(get_alert(), self.OUTPUT))
 
@@ -178,7 +178,7 @@ class TestJiraOutput:
         type(post_mock.return_value).status_code = PropertyMock(side_effect=[200, 400])
         auth_resp = {'session': {'name': 'cookie_name', 'value': 'cookie_value'}}
         post_mock.return_value.content = 'some bad content'
-        post_mock.return_value.json.side_effect = [auth_resp, dict()]
+        post_mock.return_value.json.side_effect = [auth_resp, {}]
 
         assert_false(self._dispatcher.dispatch(get_alert(), self.OUTPUT))
 
@@ -196,7 +196,7 @@ class TestJiraOutput:
         type(post_mock.return_value).status_code = PropertyMock(side_effect=[200, 400])
         auth_resp = {'session': {'name': 'cookie_name', 'value': 'cookie_value'}}
         post_mock.return_value.content = 'some bad content'
-        post_mock.return_value.json.side_effect = [auth_resp, dict()]
+        post_mock.return_value.json.side_effect = [auth_resp, {}]
 
         assert_false(self._dispatcher.dispatch(get_alert(), self.OUTPUT))
 

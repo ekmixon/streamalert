@@ -94,9 +94,7 @@ def test_get_keys():
 
 def generate_categorized_records(normalized=False, count=2):
     """Generate categorized records by source types"""
-    json_data = [
-        {'key_{}'.format(cnt): 'value_{}'.format(cnt)} for cnt in range(count)
-    ]
+    json_data = [{f'key_{cnt}': f'value_{cnt}'} for cnt in range(count)]
 
     if normalized:
         for data in json_data:

@@ -68,32 +68,14 @@ class PayloadRecord:
             LOGGER.debug('A PayloadRecord has data that is not serializable as JSON')
 
         if not self:
-            return '<{} valid:{}; raw record:{};>'.format(
-                self.__class__.__name__,
-                bool(self),
-                record_data
-            )
+            return f'<{self.__class__.__name__} valid:{bool(self)}; raw record:{record_data};>'
+
 
         if self.invalid_records:
-            return (
-                '<{} valid:{}; log type:{}; parsed records:{}; invalid records:{} ({}); '
-                'raw record:{};>'
-            ).format(
-                self.__class__.__name__,
-                bool(self),
-                self.log_schema_type,
-                len(self.parsed_records),
-                len(self.invalid_records),
-                invalid_records,
-                record_data
-            )
+            return f'<{self.__class__.__name__} valid:{bool(self)}; log type:{self.log_schema_type}; parsed records:{len(self.parsed_records)}; invalid records:{len(self.invalid_records)} ({invalid_records}); raw record:{record_data};>'
 
-        return '<{} valid:{}; log type:{}; parsed records:{};>'.format(
-            self.__class__.__name__,
-            bool(self),
-            self.log_schema_type,
-            len(self.parsed_records)
-        )
+
+        return f'<{self.__class__.__name__} valid:{bool(self)}; log type:{self.log_schema_type}; parsed records:{len(self.parsed_records)};>'
 
     @property
     def data(self):
@@ -167,10 +149,7 @@ class RegisterInput:
             StreamPayload: Loaded subclass of StreamPayload for the proper payload type
         """
         payload = cls._get_payload_class(service)
-        if not payload:
-            return False
-
-        return payload(resource=resource, raw_record=raw_record)
+        return payload(resource=resource, raw_record=raw_record) if payload else False
 
     @classmethod
     def _get_payload_class(cls, service):
@@ -209,23 +188,15 @@ class StreamPayload(metaclass=ABCMeta):
 
     def __repr__(self):
         if self:
-            return '<{} valid:{}; resource:{};>'.format(
-                self.__class__.__name__,
-                bool(self),
-                self.resource
-            )
+            return f'<{self.__class__.__name__} valid:{bool(self)}; resource:{self.resource};>'
+
         try:
             raw_record = json.dumps(self.raw_record)
         except (TypeError, ValueError):
             raw_record = self.raw_record
             LOGGER.debug('A StreamPayload has data that is not serializable as JSON')
 
-        return '<{} valid:{}; resource:{}; raw record:{};>'.format(
-            self.__class__.__name__,
-            bool(self),
-            self.resource,
-            raw_record
-        )
+        return f'<{self.__class__.__name__} valid:{bool(self)}; resource:{self.resource}; raw record:{raw_record};>'
 
     @classmethod
     def load_from_raw_record(cls, raw_record):

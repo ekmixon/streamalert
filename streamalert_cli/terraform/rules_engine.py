@@ -50,20 +50,22 @@ def generate_rules_engine(config):
     }
 
     environment = {
-        'ALERTS_TABLE': '{}_streamalert_alerts'.format(prefix),
+        'ALERTS_TABLE': f'{prefix}_streamalert_alerts',
         'STREAMALERT_PREFIX': prefix,
     }
+
 
     if config['lambda']['rules_engine_config'].get('log_rule_statistics'):
         environment['STREAMALERT_TRACK_RULE_STATS'] = '1'
 
     # Set variables for the Lambda module
     result['module']['rules_engine_lambda'] = generate_lambda(
-        '{}_streamalert_{}'.format(prefix, RULES_ENGINE_FUNCTION_NAME),
+        f'{prefix}_streamalert_{RULES_ENGINE_FUNCTION_NAME}',
         'streamalert.rules_engine.main.handler',
         config['lambda']['rules_engine_config'],
         config,
         environment=environment,
     )
+
 
     return result

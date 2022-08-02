@@ -31,7 +31,7 @@ def _tf_metric_alarms(lambda_config, sns_arn):
 
         for key in ['enabled', 'evaluation_periods', 'period_secs', 'threshold']:
             if key in settings:
-                result['{}_alarm_{}'.format(alarm_type, key)] = settings[key]
+                result[f'{alarm_type}_alarm_{key}'] = settings[key]
 
     return result
 
@@ -111,7 +111,7 @@ def generate_lambda(function_name, handler, lambda_config, config, environment=N
     }
 
     if environment:
-        environment_variables.update(environment)
+        environment_variables |= environment
 
     lambda_module = {
         'source': './modules/tf_lambda',
@@ -131,9 +131,7 @@ def generate_lambda(function_name, handler, lambda_config, config, environment=N
     if kwargs.get('zip_file'):
         lambda_module['filename'] = kwargs.get('zip_file')
 
-    # Add Classifier input config from the loaded cluster file
-    input_config = lambda_config.get('inputs')
-    if input_config:
+    if input_config := lambda_config.get('inputs'):
         input_mapping = {
             'input_sns_topics': 'aws-sns'
         }
@@ -151,7 +149,7 @@ def generate_lambda(function_name, handler, lambda_config, config, environment=N
             lambda_module[key] = lambda_config[key]
 
     # Add metric alarms and filters to the Lambda module definition
-    lambda_module.update(_tf_metric_alarms(lambda_config, monitoring_topic_arn(config)))
+    lambda_module |= _tf_metric_alarms(lambda_config, monitoring_topic_arn(config))
 
     # Add VPC config to the Lambda module definition
     lambda_module.update(_tf_vpc_config(lambda_config))

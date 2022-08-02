@@ -130,7 +130,7 @@ class RuleStagingCommand(CLICommand):
         if options.subcommand == 'enable':
             config.toggle_rule_staging(options.enable)
 
-        table_name = '{}_streamalert_rules'.format(config['global']['account']['prefix'])
+        table_name = f"{config['global']['account']['prefix']}_streamalert_rules"
         if options.subcommand == 'status':
             print(RuleTable(table_name).__str__(options.verbose))
 

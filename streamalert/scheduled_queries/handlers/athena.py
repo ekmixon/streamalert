@@ -71,7 +71,7 @@ class AthenaClient:
 
             return query_execution_id
         except ClientError as err:
-            raise AthenaQueryExecutionError('Athena query failed:\n{}'.format(err))
+            raise AthenaQueryExecutionError(f'Athena query failed:\n{err}')
 
     def get_query_execution(self, query_execution_id):
         """Gets an AthenaQueryExecution object encapsulating the result of a query
@@ -99,11 +99,15 @@ class AthenaClient:
             AthenaQueryResult
             Returns None if the given query_execution is not completed
         """
-        if not query_execution.is_succeeded():
-            return None
-        return AthenaQueryResult(
-            query_execution,
-            self._client.get_query_results(QueryExecutionId=query_execution.query_execution_id)
+        return (
+            AthenaQueryResult(
+                query_execution,
+                self._client.get_query_results(
+                    QueryExecutionId=query_execution.query_execution_id
+                ),
+            )
+            if query_execution.is_succeeded()
+            else None
         )
 
     def run_async_query(self, query, options=None):
@@ -233,9 +237,7 @@ class AthenaQueryResult:
 
         data = []
         for row in self.data_as_list:
-            dict_row = {}
-            for index, header in enumerate(headers):
-                dict_row[header] = row[index]
+            dict_row = {header: row[index] for index, header in enumerate(headers)}
             data.append(dict_row)
         return data
 

@@ -27,9 +27,10 @@ def unencrypted_ami_volume(rec):
     if not block_device_items:
         return False
 
-    volume_encryption_enabled = set()
-    for block_device in block_device_items:
-        volume_encryption_enabled.add(block_device.get('ebs', {}).get('encrypted'))
+    volume_encryption_enabled = {
+        block_device.get('ebs', {}).get('encrypted')
+        for block_device in block_device_items
+    }
 
     return not any(volume_encryption_enabled)
 
@@ -55,8 +56,4 @@ def public_ami(rec):
 
     req_params = rec['detail']['requestParameters']
     permission_items = req_params.get('launchPermission', {}).get('add', {}).get('items', [])
-    for item in permission_items:
-        if item['group'] == 'all':
-            return True
-
-    return False
+    return any(item['group'] == 'all' for item in permission_items)

@@ -354,7 +354,7 @@ class TestRulesEngine:
     def test_check_valid_output_list(self):
         """RulesEngine - _check_valid_output, list"""
 
-        output = list()
+        output = []
         result = self._rules_engine._check_valid_output(output)
 
         assert_false(result)
@@ -787,8 +787,8 @@ class TestRulesEngine:
         """RulesEngine - Run, Fail Subkey Check"""
         self._rules_engine._threat_intel = None
         with patch.object(self._rules_engine, '_process_subkeys') as subkey_mock, \
-             patch.object(self._rules_engine, '_alert_forwarder'), \
-             patch.object(self._rules_engine, '_rule_analysis') as analysis_mock:
+                 patch.object(self._rules_engine, '_alert_forwarder'), \
+                 patch.object(self._rules_engine, '_rule_analysis') as analysis_mock:
 
             subkey_mock.return_value = False
 
@@ -828,7 +828,7 @@ class TestRulesEngine:
         """RulesEngine - Run, No Rules"""
         self._rules_engine._threat_intel = None
         with patch.object(self._rules_engine, '_alert_forwarder'), \
-             patch.object(rules_engine_module, 'Rule') as rule_mock:
+                 patch.object(rules_engine_module, 'Rule') as rule_mock:
 
             rule_mock.rules_for_log_type.return_value = None
 
@@ -848,9 +848,9 @@ class TestRulesEngine:
         """RulesEngine - Run"""
         self._rules_engine._threat_intel = None
         with patch.object(self._rules_engine, '_process_subkeys'), \
-             patch.object(self._rules_engine, '_alert_forwarder') as alert_mock, \
-             patch.object(self._rules_engine, '_rule_analysis') as analysis_mock, \
-             patch.object(rules_engine_module, 'Rule') as rule_mock:
+                 patch.object(self._rules_engine, '_alert_forwarder') as alert_mock, \
+                 patch.object(self._rules_engine, '_rule_analysis') as analysis_mock, \
+                 patch.object(rules_engine_module, 'Rule') as rule_mock:
 
             rule_mock.rules_for_log_type.return_value = [
                 Mock(

@@ -79,8 +79,8 @@ class DuoApp(AppIntegration):
 
         return {
             'Date': formatted_date,
-            'Authorization': 'Basic {}'.format(b64encode(basic_auth).decode()),
-            'Host': hostname
+            'Authorization': f'Basic {b64encode(basic_auth).decode()}',
+            'Host': hostname,
         }
 
     def _gather_logs(self):
@@ -212,7 +212,7 @@ class DuoAuthApp(DuoApp):
         Returns:
             str: Path of the authentication endpoint to query
         """
-        return '{}authentication'.format(cls._ENDPOINT_PREFIX)
+        return f'{cls._ENDPOINT_PREFIX}authentication'
 
 
 @StreamAlertApp
@@ -230,4 +230,4 @@ class DuoAdminApp(DuoApp):
         Returns:
             str: Path of the administrator endpoint to query
         """
-        return '{}administrator'.format(cls._ENDPOINT_PREFIX)
+        return f'{cls._ENDPOINT_PREFIX}administrator'

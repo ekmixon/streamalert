@@ -146,7 +146,7 @@ class DemistoApiIntegration:
         if request.create_investigation:
             request_data['createInvestigation'] = True
 
-        create_incident_endpoint = '{}/incident'.format(self._creds['url'])
+        create_incident_endpoint = f"{self._creds['url']}/incident"
 
         #pylint: disable=protected-access
         # This is somewhat of a breach in abstraction, but is acceptable as-is for now.

@@ -132,10 +132,7 @@ class JiraOutput(OutputDispatcher):
             return []
 
         response = resp.json()
-        if not response:
-            return []
-
-        return response.get('issues', [])
+        return response.get('issues', []) if response else []
 
     def _create_comment(self, issue_id, comment):
         """Add a comment to an existing issue
@@ -157,10 +154,7 @@ class JiraOutput(OutputDispatcher):
             return False
 
         response = resp.json()
-        if not response:
-            return False
-
-        return response.get('id', False)
+        return response.get('id', False) if response else False
 
     def _get_comments(self, issue_id):
         """Get all comments for an existing Jira issue
@@ -180,10 +174,7 @@ class JiraOutput(OutputDispatcher):
             return []
 
         response = resp.json()
-        if not response:
-            return []
-
-        return response.get('comments', [])
+        return response.get('comments', []) if response else []
 
     def _get_existing_issue(self, issue_summary, project_key):
         """Find an existing Jira issue based on the issue summary
@@ -195,7 +186,7 @@ class JiraOutput(OutputDispatcher):
         Returns:
             int: ID of the found issue or False if existing issue does not exist
         """
-        jql = 'summary ~ "{}" and project="{}"'.format(issue_summary, project_key)
+        jql = f'summary ~ "{issue_summary}" and project="{project_key}"'
         resp = self._search_jira(jql, fields=['id', 'summary'], max_results=1)
         jira_id = False
 
@@ -241,10 +232,7 @@ class JiraOutput(OutputDispatcher):
             return False
 
         response = resp.json()
-        if not response:
-            return False
-
-        return response.get('id', False)
+        return response.get('id', False) if response else False
 
     def _establish_session(self, username, password):
         """Establish a cookie based Jira session via basic user auth.
@@ -270,11 +258,11 @@ class JiraOutput(OutputDispatcher):
             return False
 
         resp_dict = resp.json()
-        if not resp_dict:
-            return False
-
-        return '{}={}'.format(resp_dict['session']['name'],
-                              resp_dict['session']['value'])
+        return (
+            f"{resp_dict['session']['name']}={resp_dict['session']['value']}"
+            if resp_dict
+            else False
+        )
 
     def _dispatch(self, alert, descriptor):
         """Send alert to Jira
@@ -305,7 +293,7 @@ class JiraOutput(OutputDispatcher):
         publication = compose_alert(alert, self, descriptor)
 
         # Presentation defaults
-        default_issue_summary = 'StreamAlert {}'.format(alert.rule_name)
+        default_issue_summary = f'StreamAlert {alert.rule_name}'
         default_alert_body = '{{code:JSON}}{}{{code}}'.format(
             json.dumps(publication, sort_keys=True)
         )

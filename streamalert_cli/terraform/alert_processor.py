@@ -51,15 +51,16 @@ def generate_alert_processor(config):
 
     # Set variables for the Lambda module
     result['module']['alert_processor_lambda'] = generate_lambda(
-        '{}_streamalert_{}'.format(config['global']['account']['prefix'], ALERT_PROCESSOR_NAME),
+        f"{config['global']['account']['prefix']}_streamalert_{ALERT_PROCESSOR_NAME}",
         'streamalert.alert_processor.main.handler',
         config['lambda']['alert_processor_config'],
         config,
         environment={
-            'ALERTS_TABLE': '{}_streamalert_alerts'.format(prefix),
+            'ALERTS_TABLE': f'{prefix}_streamalert_alerts',
             'AWS_ACCOUNT_ID': config['global']['account']['aws_account_id'],
-            'STREAMALERT_PREFIX': prefix
-        }
+            'STREAMALERT_PREFIX': prefix,
+        },
     )
+
 
     return result

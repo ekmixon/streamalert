@@ -53,8 +53,11 @@ class IntercomApp(AppIntegration):
 
     def _gather_logs(self):
         # Generate headers
-        headers = {'Authorization': "Bearer %s" % self._config.auth['token'],
-                   'Accept': 'application/json'}
+        headers = {
+            'Authorization': f"Bearer {self._config.auth['token']}",
+            'Accept': 'application/json',
+        }
+
 
         # Results are paginated with a page url field provided that is used in subsequent queries.
         # If this field exists, make a a query to the page url, and if not, make a fresh query to

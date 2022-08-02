@@ -61,7 +61,7 @@ def add_partition_statements(partitions, bucket, table_name):
         string: The ALTER TABLE statements to add the new partitions
     """
     # Each add partition statement starting with "ALTER TABLE"
-    initial_statement = 'ALTER TABLE {} ADD IF NOT EXISTS'.format(table_name)
+    initial_statement = f'ALTER TABLE {table_name} ADD IF NOT EXISTS'
     initial_statement_len = len(initial_statement)
 
     # The statement will be stored in a list of string format before join into a string
@@ -78,7 +78,7 @@ def add_partition_statements(partitions, bucket, table_name):
         if not parts:
             continue
 
-        fmt_values.update(parts.groupdict())
+        fmt_values |= parts.groupdict()
         partition_stmt = PARTITION_STMT.format(**fmt_values)
         partition_stmt_len = len(partition_stmt)
 
@@ -117,7 +117,7 @@ def logs_schema_to_athena_schema(log_schema, ddl_statement=True):
         if ddl_statement:
             # Backticks are needed for backward compatibility when creating Athena
             # table via Athena DDL query.
-            key_name = '`{}`'.format(key_name)
+            key_name = f'`{key_name}`'
         if key_type == {}:
             # For empty dicts
             athena_schema[key_name] = SCHEMA_TYPE_MAPPING[dict]
@@ -165,13 +165,12 @@ def format_schema_tf(schema):
         key_type = schema[key_name]
         if isinstance(key_type, str):
             formatted_schema.append((key_name.lower(), key_type))
-        # Account for nested structs
         elif isinstance(key_type, dict):
             struct_schema = ','.join(
                 '{0}:{1}'.format(sub_key.lower(), key_type[sub_key])
                 for sub_key in sorted(key_type.keys())
             )
-            formatted_schema.append((key_name.lower(), 'struct<{}>'.format(struct_schema)))
+            formatted_schema.append((key_name.lower(), f'struct<{struct_schema}>'))
 
     return formatted_schema
 
@@ -220,11 +219,8 @@ def generate_data_table_schema(config, table, schema_override=None):
 
     athena_schema = logs_schema_to_athena_schema(sanitized_schema, False)
 
-    # Add envelope keys to Athena Schema
-    configuration_options = log_info.get('configuration')
-    if configuration_options:
-        envelope_keys = configuration_options.get('envelope_keys')
-        if envelope_keys:
+    if configuration_options := log_info.get('configuration'):
+        if envelope_keys := configuration_options.get('envelope_keys'):
             sanitized_envelope_key_schema = FirehoseClient.sanitize_keys(envelope_keys)
             # Note: this key is wrapped in backticks to be Hive compliant
             athena_schema['streamalert:envelope_keys'] = logs_schema_to_athena_schema(
@@ -237,7 +233,7 @@ def generate_data_table_schema(config, table, schema_override=None):
         for override in schema_override:
             column_name, column_type = override.split('=')
             # Columns are escaped to avoid Hive issues with special characters
-            column_name = '{}'.format(column_name)
+            column_name = f'{column_name}'
             if column_name in athena_schema:
                 athena_schema[column_name] = column_type
                 LOGGER.info('Applied schema override: %s:%s', column_name, column_type)

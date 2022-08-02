@@ -74,7 +74,7 @@ def test_generate_cloudwatch_monitoring_disabled():
     result = monitoring.generate_monitoring(cluster, cluster_dict, CONFIG)
 
     assert_true(result)
-    assert_true('cloudwatch_monitoring_{}'.format(cluster) not in cluster_dict['module'])
+    assert_true(f'cloudwatch_monitoring_{cluster}' not in cluster_dict['module'])
 
 
 def test_generate_cloudwatch_monitoring_no_kinesis():

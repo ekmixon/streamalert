@@ -160,7 +160,7 @@ class AlertPublisherRepository:
         Returns:
             string
         """
-        return '{}.{}'.format(class_or_function.__module__, class_or_function.__name__)
+        return f'{class_or_function.__module__}.{class_or_function.__name__}'
 
     @classmethod
     def register_publisher(cls, publisher):
@@ -174,9 +174,8 @@ class AlertPublisherRepository:
              publisher (callable|AlertPublisher): An instance of a publisher class or a function
         """
         if not AlertPublisherRepository.is_valid_publisher(publisher):
-            error = (
-                'Could not register publisher {}; Not callable nor subclass of AlertPublisher'
-            ).format(publisher)
+            error = f'Could not register publisher {publisher}; Not callable nor subclass of AlertPublisher'
+
             raise PublisherRegistrationError(error)
 
         if isclass(publisher):
@@ -191,7 +190,7 @@ class AlertPublisherRepository:
         name = AlertPublisherRepository.get_publisher_name(publisher)
 
         if name in cls._publishers:
-            error = 'Publisher with name [{}] has already been registered.'.format(name)
+            error = f'Publisher with name [{name}] has already been registered.'
             raise PublisherRegistrationError(error)
 
         cls._publishers[name] = publisher_instance
@@ -245,8 +244,7 @@ class AlertPublisherRepository:
         publishers = []
 
         for publisher_name in publisher_names:
-            publisher = cls.get_publisher(publisher_name)
-            if publisher:
+            if publisher := cls.get_publisher(publisher_name):
                 publishers.append(publisher)
 
         if not publishers:

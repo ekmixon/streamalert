@@ -69,10 +69,7 @@ class TestFirehoseClient:
 
     @classmethod
     def _sample_raw_records(cls, count=2):
-        return [
-            {'key_{}'.format(i): 'value_{}'.format(i)}
-            for i in range(count)
-        ]
+        return [{f'key_{i}': f'value_{i}'} for i in range(count)]
 
     def test_records_to_json_list(self):
         """FirehoseClient - Records JSON Lines"""
@@ -122,10 +119,7 @@ class TestFirehoseClient:
 
     def test_record_batches_max_batch_size(self):
         """FirehoseClient - Record Batches, Max Batch Size"""
-        records = [
-            {'key_{}'.format(i): 'test' * 100000}
-            for i in range(10)
-        ]
+        records = [{f'key_{i}': 'test' * 100000} for i in range(10)]
         result = list(FirehoseClient._record_batches(records, 'test_function_name'))
         assert_equal(len(result), 2)
         assert_equal(len(result[0]), 9)
@@ -201,7 +195,7 @@ class TestFirehoseClient:
         payloads = self._sample_payloads
         result = self._client._categorize_records(payloads)
 
-        assert_equal(dict(result), dict())
+        assert_equal(dict(result), {})
 
     def test_categorize_records_subset_enabled(self):
         """FirehoseClient - Categorize Records, Subset Enabled"""
@@ -357,7 +351,7 @@ class TestFirehoseClient:
         }
 
         enabled_logs = FirehoseClient.load_enabled_log_sources(firehose_config, logs_config)
-        assert_equal(enabled_logs, dict())
+        assert_equal(enabled_logs, {})
         log_mock.assert_called_with(
             'Enabled Firehose log %s not declared in logs.json', log_type
         )
@@ -376,7 +370,7 @@ class TestFirehoseClient:
         }
 
         enabled_logs = FirehoseClient.load_enabled_log_sources(firehose_config, logs_config)
-        assert_equal(enabled_logs, dict())
+        assert_equal(enabled_logs, {})
         log_mock.assert_called_with(
             'Enabled Firehose log %s not declared in logs.json', log_type
         )

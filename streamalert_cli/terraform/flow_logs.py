@@ -71,11 +71,10 @@ def generate_flow_logs(cluster_name, cluster_dict, config):
             flow_logs_settings[variable] = modules['flow_logs'][variable]
 
     for flow_log_type in DEFAULT_FLOW_LOG_TYPES:
-        values = modules['flow_logs'].get(flow_log_type)
-        if values:
+        if values := modules['flow_logs'].get(flow_log_type):
             flow_logs_settings[flow_log_type] = values
 
-    cluster_dict['module']['flow_logs_{}'.format(cluster_name)] = flow_logs_settings
+    cluster_dict['module'][f'flow_logs_{cluster_name}'] = flow_logs_settings
 
     # Add the additional settings to allow for internal flow log sending
     return generate_cloudwatch_destinations_internal(cluster_name, cluster_dict, config)

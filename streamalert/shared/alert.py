@@ -75,10 +75,9 @@ class Alert:
         """
         if not set(kwargs).issubset(self._EXPECTED_INIT_KWARGS):
             raise AlertCreationError(
-                'Invalid Alert kwargs: {} are not in the expected set of {}'.format(
-                    ', '.join(sorted(set(kwargs).difference(self._EXPECTED_INIT_KWARGS))),
-                    ', '.join(sorted(self._EXPECTED_INIT_KWARGS)))
+                f"Invalid Alert kwargs: {', '.join(sorted(set(kwargs).difference(self._EXPECTED_INIT_KWARGS)))} are not in the expected set of {', '.join(sorted(self._EXPECTED_INIT_KWARGS))}"
             )
+
 
         # Empty strings and empty sets are not allowed in Dynamo, so for safety we explicitly
         # convert any Falsey value to the expected type during Alert creation.
@@ -118,7 +117,7 @@ class Alert:
 
     def __str__(self):
         """Simple string representation includes alert ID and triggered rule."""
-        return '<Alert {} triggered from {}>'.format(self.alert_id, self.rule_name)
+        return f'<Alert {self.alert_id} triggered from {self.rule_name}>'
 
     @property
     def dynamo_key(self):
@@ -279,12 +278,13 @@ class Alert:
         Returns:
             dict: A new record, with no ignored_keys
         """
-        result = {}
-        for key, val in record.items():
-            if key in ignored_keys:
-                continue
-            result[key] = cls._clean_record(val, ignored_keys) if isinstance(val, dict) else val
-        return result
+        return {
+            key: cls._clean_record(val, ignored_keys)
+            if isinstance(val, dict)
+            else val
+            for key, val in record.items()
+            if key not in ignored_keys
+        }
 
     @classmethod
     def _compute_common(cls, records):
@@ -312,7 +312,7 @@ class Alert:
         other_records = records[1:]
         common = {}
         for key, val in records[0].items():
-            if not all(key in r for r in other_records):
+            if any(key not in r for r in other_records):
                 # This key does not exist in all other records and so cannot be common.
                 continue
 
@@ -329,8 +329,7 @@ class Alert:
                     # This key is not a dictionary in every record - no partial similarities exist.
                     continue
 
-                nested_common = cls._compute_common([r[key] for r in records])
-                if nested_common:
+                if nested_common := cls._compute_common([r[key] for r in records]):
                     common[key] = nested_common
 
         return common
@@ -369,9 +368,7 @@ class Alert:
                 continue
 
             if isinstance(val, dict) and isinstance(common[key], dict):
-                # The value is a dict which is not entirely in common, but maybe partially so.
-                inner_diff = cls._compute_diff(common[key], val)
-                if inner_diff:
+                if inner_diff := cls._compute_diff(common[key], val):
                     diff[key] = inner_diff
             else:
                 # No recursion necessary - this value is definitely not in common.

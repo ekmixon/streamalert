@@ -85,10 +85,7 @@ class StreamAlertOutput:
             OutputDispatcher: Subclass of OutputDispatcher to use for sending alerts
         """
         dispatcher = cls.get_dispatcher(service)
-        if not dispatcher:
-            return False
-
-        return dispatcher(config)
+        return dispatcher(config) if dispatcher else False
 
     @classmethod
     def get_dispatcher(cls, service):
@@ -176,14 +173,15 @@ class OutputDispatcher(metaclass=ABCMeta):
     def _catch_exceptions(cls):
         """Classmethod that returns a tuple of the exceptions to catch"""
         default_exceptions = (OutputRequestFailure, ReqTimeout)
-        exceptions = cls._get_exceptions_to_catch()
-        if not exceptions:
+        if exceptions := cls._get_exceptions_to_catch():
+            return (
+                default_exceptions + exceptions
+                if isinstance(exceptions, tuple)
+                else default_exceptions + (exceptions,)
+            )
+
+        else:
             return default_exceptions
-
-        if isinstance(exceptions, tuple):
-            return default_exceptions + exceptions
-
-        return default_exceptions + (exceptions,)
 
     @classmethod
     def _get_exceptions_to_catch(cls):

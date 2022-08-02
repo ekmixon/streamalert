@@ -326,7 +326,7 @@ class TestAlert:
         """Alert Class - Compute Diff - Record Identical to Common"""
         record = {'a': 1, 'b': 2, 'c': {'d': {'e': 3}}}
         common = record
-        assert_equal({}, Alert._compute_diff(common, record))
+        assert_equal({}, Alert._compute_diff(common, common))
 
     def test_compute_diff_top_level(self):
         """Alert Class - Compute Diff - Top Level Keys"""

@@ -93,7 +93,7 @@ class TeamsOutput(OutputDispatcher):
                       ...
         """
         # Presentation defaults
-        default_title = "StreamAlert Rule Triggered: {}".format(alert.rule_name)
+        default_title = f"StreamAlert Rule Triggered: {alert.rule_name}"
         default_description = alert.rule_description
         default_color = "E81123"  # Red in Hexstring format
 

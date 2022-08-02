@@ -94,17 +94,14 @@ class CarbonBlackOutput(OutputDispatcher):
                     return True
                 # If the binary is banned and disabled, begin the banning hash operation
                 banned_hash = client.select(BannedHash, binary_hash)
-                banned_hash.enabled = True
-                banned_hash.save()
             else:
                 # Create a new BannedHash object to be saved
                 banned_hash = client.create(BannedHash)
                 # Begin the banning hash operation
                 banned_hash.md5hash = binary.md5
                 banned_hash.text = "Banned from StreamAlert"
-                banned_hash.enabled = True
-                banned_hash.save()
-
-            return banned_hash.enabled is True
+            banned_hash.enabled = True
+            banned_hash.save()
+            return banned_hash.enabled
         LOGGER.error('[%s] Action not supported: %s', self.__service__, action)
         return False

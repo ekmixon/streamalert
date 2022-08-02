@@ -40,8 +40,9 @@ class ThreatIntelCommand(CLICommand):
             'action',
             metavar='ACTION',
             choices=actions,
-            help='One of the following actions to be performed: {}'.format(', '.join(actions))
+            help=f"One of the following actions to be performed: {', '.join(actions)}",
         )
+
 
         subparser.add_argument(
             '--dynamodb-table',

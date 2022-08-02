@@ -205,10 +205,7 @@ class BoxApp(AppIntegration):
             except (IOError, ValueError):
                 return False
 
-            if not cls._load_auth(auth_data):
-                return False
-
-            return auth_data
+            return auth_data if cls._load_auth(auth_data) else False
 
         return {
             'keyfile':

@@ -75,7 +75,7 @@ class TestArtifactExtractor:
             call.debug('Extracted %d artifact(s)', 0)
         ])
 
-        assert_equal(self._artifact_extractor._artifacts, list())
+        assert_equal(self._artifact_extractor._artifacts, [])
 
     @patch('uuid.uuid4')
     @patch.object(FirehoseClient, '_send_batch')

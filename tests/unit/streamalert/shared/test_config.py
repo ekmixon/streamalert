@@ -39,14 +39,12 @@ from tests.unit.helpers.config import basic_streamalert_config
 def get_mock_lambda_context(func_name, milliseconds=100):
     """Helper function to create a fake context object using Mock"""
     arn = 'arn:aws:lambda:us-east-1:123456789012:function:{}:development'
-    context = Mock(
+    return Mock(
         invoked_function_arn=(arn.format(func_name)),
         function_name=func_name,
         function_version='production',
-        get_remaining_time_in_millis=Mock(return_value=milliseconds)
+        get_remaining_time_in_millis=Mock(return_value=milliseconds),
     )
-
-    return context
 
 
 class TestConfigLoading(fake_filesystem_unittest.TestCase):

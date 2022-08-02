@@ -74,10 +74,6 @@ def _delete_dictionary_fields(publication, regexp):
                 fringe.append(item)
         elif isinstance(next_item, list):
             fringe.extend(next_item)
-        else:
-            # It's a leaf node, or it's some strange object that doesn't belong here
-            pass
-
     return publication
 
 
@@ -231,10 +227,6 @@ class StringifyArrays(AlertPublisher):
                 # because it is too late to stringify it, since we do not have a back reference
                 # to the object that contains it
                 fringe.extend(next_item)
-            else:
-                # It's a leaf node, or it's some strange object that doesn't belong here
-                pass
-
         return publication
 
     @staticmethod
@@ -251,14 +243,11 @@ class StringifyArrays(AlertPublisher):
         Returns:
             bool
         """
-        if not isinstance(item, list):
-            return False
-
-        for element in item:
-            if isinstance(element, dict) or isinstance(element, list):
-                return False
-
-        return True
+        return (
+            not any(isinstance(element, (dict, list)) for element in item)
+            if isinstance(item, list)
+            else False
+        )
 
     @classmethod
     def stringify(cls, array):

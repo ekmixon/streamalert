@@ -89,8 +89,10 @@ class TestIntercomApp:
         }
 
     def test_headers(self):
-        return {'Authorization': "Bearer %s" % self._app._config.auth['token'],
-                'Accept': 'application/json'}
+        return {
+            'Authorization': f"Bearer {self._app._config.auth['token']}",
+            'Accept': 'application/json',
+        }
 
     @patch('requests.get')
     def test_gather_intercom_logs_bad_response(self, requests_mock):

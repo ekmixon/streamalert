@@ -89,8 +89,9 @@ class AppCommand(CLICommand):
             'type',
             choices=app_types,
             metavar='APP_TYPE',
-            help='Type of app being configured: {}'.format(', '.join(app_types))
+            help=f"Type of app being configured: {', '.join(app_types)}",
         )
+
 
         # Function schedule expression (rate) arg
         add_schedule_expression_arg(app_new_parser)
@@ -182,13 +183,13 @@ class AppCommand(CLICommand):
             }
 
             for cluster, info in all_info.items():
-                print('\nCluster: {}\n'.format(cluster))
+                print(f'\nCluster: {cluster}\n')
                 if not info:
                     print('\tNo Apps configured\n')
                     continue
 
                 for name, details in info.items():
-                    print('\tName: {}'.format(name))
+                    print(f'\tName: {name}')
                     print('\n'.join([
                         '\t\t{key}:{padding_char:<{padding_count}}{value}'.format(
                             key=key_name,
@@ -225,12 +226,14 @@ class AppCommand(CLICommand):
                 LOGGER.error('No apps configured for cluster \'%s\'', app_info['cluster'])
                 return False
 
-            # Find the appropriate function config for this app
-            func_name = None
-            for function_name, app_config in apps.items():
-                if app_config.get('app_name') == app_info['app_name']:
-                    func_name = function_name
-                    break
+            func_name = next(
+                (
+                    function_name
+                    for function_name, app_config in apps.items()
+                    if app_config.get('app_name') == app_info['app_name']
+                ),
+                None,
+            )
 
             if not func_name:
                 LOGGER.error('App with name \'%s\' does not exist for cluster \'%s\'',
@@ -243,7 +246,4 @@ class AppCommand(CLICommand):
 
             app = StreamAlertApp.get_app(app_info['type'])
 
-            if not save_app_auth_info(app, app_info, func_name, True):
-                return False
-
-            return True
+            return bool(save_app_auth_info(app, app_info, func_name, True))

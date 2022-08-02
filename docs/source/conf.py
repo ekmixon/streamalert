@@ -69,7 +69,11 @@ html_favicon = '../images/sa-square-logo-standalone.png'
 # We want both the |version| and the |release| to be the full X.Y.Z version string.
 with open('../../streamalert/__init__.py', 'r') as version_file:
     release = re.search(
-        r"^__version__ = ['\"]([^'\"]+)['\"]", version_file.read(), re.MULTILINE).group(1)
+        r"^__version__ = ['\"]([^'\"]+)['\"]",
+        version_file.read(),
+        re.MULTILINE,
+    )[1]
+
 
 version = release
 

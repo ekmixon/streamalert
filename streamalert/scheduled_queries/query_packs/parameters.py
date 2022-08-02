@@ -64,8 +64,9 @@ class QueryParameterGenerator:
             return str(round(self._clock.now.timestamp()))
 
         self._logger.error(
-            'Parameter generator does not know how to handle "{}"'.format(parameter)
+            f'Parameter generator does not know how to handle "{parameter}"'
         )
+
         return None
 
     def generate_advanced(self, key, configuration):

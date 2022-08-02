@@ -75,9 +75,9 @@ class OutputSharedMethods:
         region = account_config['region']
         prefix = account_config['prefix']
         kms_key_alias = account_config.get(
-            'kms_key_alias',
-            '{}_streamalert_secrets'.format(prefix)
+            'kms_key_alias', f'{prefix}_streamalert_secrets'
         )
+
         # Verify that the word alias is not in the config.
         # It is interpolated when the API call is made.
         if 'alias/' in kms_key_alias:
@@ -147,10 +147,9 @@ class OutputSetSubCommand(CLICommand, OutputSharedMethods):
             'service',
             choices=outputs,
             metavar='SERVICE',
-            help='Create a new StreamAlert output for one of the available services: {}'.format(
-                ', '.join(outputs)
-            )
+            help=f"Create a new StreamAlert output for one of the available services: {', '.join(outputs)}",
         )
+
 
         # Add the optional update flag, which allows existing outputs to be updated
         set_parser.add_argument(
@@ -336,10 +335,9 @@ class OutputGenerateSkeletonSubCommand(CLICommand):
             nargs='+',
             metavar='SERVICE',
             default=outputs,
-            help='Pass the services to generate the skeleton for from services: {}'.format(
-                ', '.join(outputs)
-            )
+            help=f"Pass the services to generate the skeleton for from services: {', '.join(outputs)}",
         )
+
 
         # Add the optional file flag
         generate_skeleton_parser.add_argument(
@@ -369,12 +367,11 @@ class OutputGenerateSkeletonSubCommand(CLICommand):
             properties = output.get_user_defined_properties()
             skeleton[service] = [
                 {
-                    name: 'desc: {}, restrictions: {}'.format(
-                        prop.description, prop.input_restrictions
-                    )
+                    name: f'desc: {prop.description}, restrictions: {prop.input_restrictions}'
                     for name, prop in properties.items()
                 }
             ]
+
 
         try:
             with open(options.file, 'w') as json_file_fp:
@@ -412,10 +409,9 @@ class OutputGetSubCommand(CLICommand):
             'service',
             choices=outputs,
             metavar='SERVICE',
-            help='Service to pull configured outputs and their secrets, select from: {}'.format(
-                ', '.join(outputs)
-            )
+            help=f"Service to pull configured outputs and their secrets, select from: {', '.join(outputs)}",
         )
+
 
         # Add the optional ability to pass multiple descriptors
         get_parser.add_argument(
@@ -447,7 +443,7 @@ class OutputGetSubCommand(CLICommand):
         ]
 
         # Set the descriptors to get the secrets for
-        descriptors = options.descriptors if options.descriptors else configured_descriptors
+        descriptors = options.descriptors or configured_descriptors
 
         LOGGER.debug('Getting secrets for service %s and descriptors %s', service, descriptors)
 
@@ -489,9 +485,7 @@ class OutputListSubCommand(CLICommand):
             default=outputs,
             nargs='*',
             metavar='SERVICE',
-            help='Pass Services to list configured output descriptors, select from: {}'.format(
-                ', '.join(outputs)
-            )
+            help=f"Pass Services to list configured output descriptors, select from: {', '.join(outputs)}",
         )
 
     @classmethod
@@ -510,5 +504,5 @@ class OutputListSubCommand(CLICommand):
             if output not in outputs:
                 continue
             for descriptor in outputs[output]:
-                print("\t{}:{}".format(output, descriptor))
+                print(f"\t{output}:{descriptor}")
             print()  # ensure a newline between each service for easier reading

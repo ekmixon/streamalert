@@ -258,11 +258,12 @@ class TestTerraformGenerate:
         }
 
         assert_true(
-            all([
+            all(
                 expected_module in generated_modules
                 for expected_module in expected_kinesis_modules
-            ])
+            )
         )
+
 
         assert_equal(
             generated_modules['kinesis_firehose_cloudwatch_test_match_types']['s3_bucket_name'],

@@ -169,7 +169,7 @@ class TestOutputDispatcher:
     @mock_kms
     def test_load_creds(self):
         """OutputDispatcher - Load Credentials"""
-        param_name = '/{}/streamalert/outputs/test_service/desc_test'.format(PREFIX)
+        param_name = f'/{PREFIX}/streamalert/outputs/test_service/desc_test'
         creds = {
             'url': 'http://www.foo.bar/test',
             'token': 'token_to_encrypt'

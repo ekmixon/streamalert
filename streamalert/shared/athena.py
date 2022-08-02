@@ -57,7 +57,7 @@ class AthenaClient:
 
         # Make sure the required 's3://' prefix is included
         if not results_bucket.startswith('s3://'):
-            results_bucket = 's3://{}'.format(results_bucket)
+            results_bucket = f's3://{results_bucket}'
 
         # Produces s3://<results_bucket_name>/<results_prefix>
         self._s3_results_path_prefix = posixpath.join(results_bucket, results_prefix)
@@ -132,7 +132,7 @@ class AthenaClient:
                 ResultConfiguration={'OutputLocation': self.results_path}
             )
         except ClientError as err:
-            raise AthenaQueryExecutionError('Athena query failed:\n{}'.format(err))
+            raise AthenaQueryExecutionError(f'Athena query failed:\n{err}')
 
     def drop_all_tables(self):
         """Drop all table in the database
@@ -158,7 +158,7 @@ class AthenaClient:
         Returns:
             bool: True if the table was successfully dropped, False otherwise
         """
-        success = self.run_query('DROP TABLE {}'.format(table_name))
+        success = self.run_query(f'DROP TABLE {table_name}')
         if not success:
             LOGGER.error('Unable to drop table: %s', table_name)
             return False
@@ -175,7 +175,7 @@ class AthenaClient:
         Returns:
             set: Unique set of partitions for the given table
         """
-        partitions = self.run_query_for_results('SHOW PARTITIONS {}'.format(table_name))
+        partitions = self.run_query_for_results(f'SHOW PARTITIONS {table_name}')
         if not partitions:
             LOGGER.error('An error occurred when loading partitions for %s', table_name)
             return
@@ -239,9 +239,7 @@ class AthenaClient:
 
         paginator = self._client.get_paginator('get_query_results')
 
-        result_iterator = paginator.paginate(QueryExecutionId=execution_id)
-        for result in result_iterator:
-            yield result
+        yield from paginator.paginate(QueryExecutionId=execution_id)
 
     def run_async_query(self, query):
         """Run an Athena query in an asynchronous fashion. This operation is non-blocking
@@ -301,7 +299,10 @@ class AthenaClient:
 
     def check_database_exists(self):
         """Verify the Athena database being used exists. This is a blocking operation"""
-        response = self.run_query_for_results('SHOW DATABASES LIKE \'{}\';'.format(self.database))
+        response = self.run_query_for_results(
+            f"SHOW DATABASES LIKE \'{self.database}\';"
+        )
+
 
         return bool(response and response['ResultSet']['Rows'])
 
@@ -311,6 +312,6 @@ class AthenaClient:
         Args:
             table_name (str): Table name whose existence is being verified
         """
-        result = self.run_query_for_results('SHOW TABLES LIKE \'{}\';'.format(table_name))
+        result = self.run_query_for_results(f"SHOW TABLES LIKE \'{table_name}\';")
 
         return bool(result and result['ResultSet']['Rows'])

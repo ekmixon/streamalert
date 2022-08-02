@@ -102,11 +102,10 @@ class StagingStatistic:
         )
 
         staged_diff = abs(self._current_time - self.staged_until)
-        info['staged_delta'] = '{}d {}h {}m'.format(
-            staged_diff.days,
-            staged_diff.seconds // 3600,
-            (staged_diff.seconds // 60) % 60
-        )
+        info[
+            'staged_delta'
+        ] = f'{staged_diff.days}d {staged_diff.seconds // 3600}h {staged_diff.seconds // 60 % 60}m'
+
 
         info['info_link'] = (
             self._QUERY_EXECUTION_LINK_TEMPLATE.format(execution_id=self.execution_id)

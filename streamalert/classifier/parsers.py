@@ -38,8 +38,9 @@ def parser(cls):
     parser_type = cls.type()
     if not parser_type:
         raise NotImplementedError(
-            '{}: Parser does not define a class property for \'_type\''.format(cls.__name__)
+            f"{cls.__name__}: Parser does not define a class property for \'_type\'"
         )
+
 
     PARSERS[parser_type] = cls
     return cls
@@ -247,23 +248,21 @@ class ParserBase(metaclass=ABCMeta):
 
         schema_keys = set(schema)
 
-        keys = set(record) if not optionals else set(record).union(optionals)
+        keys = set(record).union(optionals) if optionals else set(record)
 
         if is_envelope and not schema_keys.issubset(keys):
             LOGGER.debug('Missing keys in record envelope: %s', schema_keys - keys)
             return False
 
         if not is_envelope and keys != schema_keys:
-            expected = schema_keys - keys
-            if expected:
+            if expected := schema_keys - keys:
                 LOGGER.debug(
                     'Expected keys not found in record: %s', ', '.join(
                         str(val) for val in sorted(expected, key=str)
                     )
                 )
 
-            found = keys - schema_keys
-            if found:
+            if found := keys - schema_keys:
                 LOGGER.debug(
                     'Found keys not expected in record: %s', ', '.join(
                         str(val) for val in sorted(found, key=str)
@@ -616,10 +615,10 @@ class JSONParser(ParserBase):
         records = []
         if self._json_path:
             records = self._extract_via_json_path(data)
-        elif self.json_regex_key:
+        else:
             records = self._extract_via_json_regex_key(data)
 
-        return records if records else [(data, False)]
+        return records or [(data, False)]
 
 
 @parser
@@ -705,7 +704,7 @@ class CSVParser(ParserBase):
             try:
                 for row in reader:
                     parsed_payload = self._parse_row(row, schema)
-                    result = parsed_payload if parsed_payload else row
+                    result = parsed_payload or row
                     # Append the result and whether or not it was a success
                     csv_payloads.append((result, result is parsed_payload))
             except csv.Error:
@@ -838,7 +837,4 @@ class SyslogParser(ParserBase):
                 Examples: [({'key': 'value'}, True)]
         """
         match = self._regex.search(data)
-        if not match:
-            return [(data, False)]
-
-        return [(match.groupdict(), True)]
+        return [(match.groupdict(), True)] if match else [(data, False)]

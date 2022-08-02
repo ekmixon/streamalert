@@ -207,10 +207,7 @@ class GSuiteReportsApp(AppIntegration):
             except (IOError, ValueError):
                 return False
 
-            if not cls._load_credentials(keydata):
-                return False
-
-            return keydata
+            return keydata if cls._load_credentials(keydata) else False
 
         return {
             'keyfile':

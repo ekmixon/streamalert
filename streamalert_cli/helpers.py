@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 from getpass import getpass
 import json
 import os
@@ -32,8 +33,8 @@ SCHEMA_TYPE_LOOKUP = {
     float: 'float',
     int: 'integer',
     str: 'string',
-    dict: dict(),
-    list: list()
+    dict: {},
+    list: [],
 }
 
 
@@ -48,19 +49,18 @@ def run_command(runner_args, cwd='./', **kwargs):
         error_message (str): Message to output if command fails
         quiet (bool): Set to True to suppress command output
     """
-    default_error_message = "An error occurred while running: {}".format(' '.join(runner_args))
+    default_error_message = (
+        f"An error occurred while running: {' '.join(runner_args)}"
+    )
+
     error_message = kwargs.get('error_message', default_error_message)
 
     # Add the -force-copy flag for s3 state copying to suppress dialogs that
     # the user must type 'yes' into.
-    if runner_args[0] == 'terraform':
-        if runner_args[1] == 'init':
-            runner_args.append('-force-copy')
+    if runner_args[0] == 'terraform' and runner_args[1] == 'init':
+        runner_args.append('-force-copy')
 
-    stdout_option = None
-    if kwargs.get('quiet'):
-        stdout_option = open(os.devnull, 'w')
-
+    stdout_option = open(os.devnull, 'w') if kwargs.get('quiet') else None
     try:
         subprocess.check_call(runner_args, stdout=stdout_option, cwd=cwd)  # nosec
     except subprocess.CalledProcessError as err:
@@ -90,7 +90,7 @@ def continue_prompt(message=None):
 
     response = ''
     while response not in required_responses:
-        response = input('\n{} (yes or no): '.format(message)) # nosec
+        response = input(f'\n{message} (yes or no): ')
 
     return response == 'yes'
 
@@ -136,7 +136,7 @@ def user_input(requested_info, mask, input_restrictions):
     """
     # pylint: disable=protected-access
     response = ''
-    prompt = '\nPlease supply {}: '.format(requested_info)
+    prompt = f'\nPlease supply {requested_info}: '
 
     if not mask:
         while not response:
@@ -179,10 +179,12 @@ def response_is_valid(response, input_restrictions):
             LOGGER.error('The supplied input failed to pass the validation '
                          'function: %s', input_restrictions.__doc__)
     else:
-        valid_response = not any(x in input_restrictions for x in response)
+        valid_response = all(x not in input_restrictions for x in response)
         if not valid_response:
             restrictions = ', '.join(
-                '\'{}\''.format(restriction) for restriction in input_restrictions)
+                f"\'{restriction}\'" for restriction in input_restrictions
+            )
+
             LOGGER.error('The supplied input should not contain any of the following: %s',
                          restrictions)
     return valid_response
@@ -253,12 +255,9 @@ def record_to_schema(record, recursive=False):
     if not isinstance(record, dict):
         return
 
-    result = {}
-    for key, value in record.items():
-        # only worry about recursion for dicts, not lists
-        if recursive and isinstance(value, dict):
-            result[key] = record_to_schema(value, recursive)
-        else:
-            result[key] = SCHEMA_TYPE_LOOKUP.get(type(value), 'string')
-
-    return result
+    return {
+        key: record_to_schema(value, recursive)
+        if recursive and isinstance(value, dict)
+        else SCHEMA_TYPE_LOOKUP.get(type(value), 'string')
+        for key, value in record.items()
+    }

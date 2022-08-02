@@ -64,10 +64,11 @@ class StatsPublisher:
             str: Entire message digest to be sent to SNS, sorted with statistics
                 that have the highest alert count at the top
         """
-        if not stats:
-            return 'No currently staged rules to report on'
-
-        return '\n\n'.join(str(stat) for stat in sorted(stats, reverse=True))
+        return (
+            '\n\n'.join(str(stat) for stat in sorted(stats, reverse=True))
+            if stats
+            else 'No currently staged rules to report on'
+        )
 
     def _query_alerts(self, stat):
         """Execute a query for all alerts for a rule so the user can be sent the results
@@ -96,10 +97,8 @@ class StatsPublisher:
 
         sns_client = boto3.resource('sns').Topic(self._topic_arn)
 
-        subject = 'Alert statistics for {} staged rule(s) [{} UTC]'.format(
-            len(stats),
-            self._current_time
-        )
+        subject = f'Alert statistics for {len(stats)} staged rule(s) [{self._current_time} UTC]'
+
 
         sns_client.publish(
             Message=self._format_digest(stats),

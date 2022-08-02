@@ -118,6 +118,6 @@ def generate_tf_outputs(cluster_dict, module_name, outputs):
         outputs (list): Names of outputs that should be included
     """
     for output_var in sorted(outputs):
-        cluster_dict['output']['{}_{}'.format(module_name, output_var)] = {
+        cluster_dict['output'][f'{module_name}_{output_var}'] = {
             'value': '${{module.{}.{}}}'.format(module_name, output_var)
         }

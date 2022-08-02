@@ -116,11 +116,11 @@ class TestParserBaseClassMethods:
 
     def test_default_optional_values_list(self):
         """ParserBase - Default Optional Type, List"""
-        assert_equal(ParserBase.default_optional_values(list()), [])
+        assert_equal(ParserBase.default_optional_values([]), [])
 
     def test_default_optional_values_dict(self):
         """ParserBase - Default Optional Type, Dictionary"""
-        assert_equal(ParserBase.default_optional_values(dict()), {})
+        assert_equal(ParserBase.default_optional_values({}), {})
 
     def test_apply_envelope(self):
         """ParserBase - Apply Envelope"""

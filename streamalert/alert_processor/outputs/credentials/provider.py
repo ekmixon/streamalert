@@ -62,7 +62,7 @@ class OutputCredentialsProvider:
         # Account Id: Check constructor args first, then ENV, then config
         self._account_id = self._calculate_account_id(aws_account_id, config)
 
-        self._defaults = defaults if defaults else {}
+        self._defaults = defaults or {}
 
         # Drivers are strategies utilized by this class for fetching credentials from various
         # locations on disk or remotely
@@ -157,9 +157,7 @@ class OutputCredentialsProvider:
 
         creds_dict = json.loads(decrypted_creds)
 
-        # Add any of the hard-coded default output props to this dict (ie: url)
-        defaults = self._defaults
-        if defaults:
+        if defaults := self._defaults:
             creds_dict.update(defaults)
 
         return creds_dict
@@ -328,7 +326,7 @@ def get_formatted_output_credentials_name(service_name, descriptor):
 
     # should descriptor be enforced in all rules?
     if descriptor:
-        cred_name = '{}/{}'.format(cred_name, descriptor)
+        cred_name = f'{cred_name}/{descriptor}'
 
     return cred_name
 
@@ -423,7 +421,7 @@ class SSMDriver(CredentialsProvidingDriver):
         parameter_suffix = get_formatted_output_credentials_name(self._service_name, descriptor)
 
         # The leading forward slash character is intentional for parameters in a hierarchy
-        return "/{}/streamalert/outputs/{}".format(self._prefix, parameter_suffix)
+        return f"/{self._prefix}/streamalert/outputs/{parameter_suffix}"
 
 
 class LocalFileDriver(CredentialsProvidingDriver, FileDescriptorProvider, CredentialsCachingDriver):
@@ -485,11 +483,10 @@ class LocalFileDriver(CredentialsProvidingDriver, FileDescriptorProvider, Creden
         return open(file_path, 'a+b')  # read+write and in binary mode
 
     def get_file_path(self, descriptor):
-        local_cred_location = os.path.join(
+        return os.path.join(
             self._temp_dir,
-            get_formatted_output_credentials_name(self._service_name, descriptor)
+            get_formatted_output_credentials_name(self._service_name, descriptor),
         )
-        return local_cred_location
 
     @staticmethod
     def get_local_credentials_temp_dir():
@@ -598,7 +595,7 @@ class SpooledTempfileDriver(CredentialsProvidingDriver, FileDescriptorProvider):
         return tempfile.SpooledTemporaryFile(0, 'a+b')
 
     def get_spool_cache_key(self, descriptor):
-        return '{}/{}'.format(self._service_name, descriptor)
+        return f'{self._service_name}/{descriptor}'
 
 
 class EphemeralUnencryptedDriver(CredentialsProvidingDriver, CredentialsCachingDriver):
@@ -653,4 +650,4 @@ class EphemeralUnencryptedDriver(CredentialsProvidingDriver, CredentialsCachingD
         cls.CREDENTIALS_STORE.clear()
 
     def get_storage_key(self, descriptor):
-        return '{}/{}'.format(self._service_name, descriptor)
+        return f'{self._service_name}/{descriptor}'

@@ -136,9 +136,9 @@ class LookupTablesSetFromFile(CLICommand):
 
         core = LookupTables.get_instance(config=config)
 
-        print('  Table: {}'.format(options.table))
-        print('  Key:   {}'.format(options.key))
-        print('  File:  {}'.format(options.file))
+        print(f'  Table: {options.table}')
+        print(f'  Key:   {options.key}')
+        print(f'  File:  {options.file}')
 
         table = core.table(options.table)
 
@@ -224,8 +224,8 @@ class LookupTablesListAddSubCommand(CLICommand):
 
         core = LookupTables.get_instance(config=config)
 
-        print('  Table: {}'.format(table_name))
-        print('  Key:   {}'.format(key))
+        print(f'  Table: {table_name}')
+        print(f'  Key:   {key}')
 
         table = core.table(table_name)
         old_value = table.get(key)
@@ -234,7 +234,7 @@ class LookupTablesListAddSubCommand(CLICommand):
             old_value = []
 
         if not isinstance(old_value, list):
-            print('  ERROR: The current value is not a list: {}'.format(old_value))
+            print(f'  ERROR: The current value is not a list: {old_value}')
             return False
 
         new_value = copy.copy(old_value)
@@ -246,7 +246,7 @@ class LookupTablesListAddSubCommand(CLICommand):
         if options.sort:
             new_value = sorted(new_value)
 
-        print('  Value: {} --> {}'.format(old_value, new_value))
+        print(f'  Value: {old_value} --> {new_value}')
 
         LookupTablesMagic.set_table_value(table, key, new_value)
 
@@ -282,11 +282,11 @@ class LookupTablesDescribeTablesSubCommand(CLICommand):
 
         lookup_tables = LookupTablesMagic.get_all_tables(LookupTables.get_instance(config=config))
 
-        print('{} Tables:\n'.format(len(lookup_tables)))
+        print(f'{len(lookup_tables)} Tables:\n')
         for table in lookup_tables.values():
-            print(' Table Name: {}'.format(table.table_name))
-            print(' Driver Id: {}'.format(table.driver_id))
-            print(' Driver Type: {}\n'.format(table.driver_type))
+            print(f' Table Name: {table.table_name}')
+            print(f' Driver Id: {table.driver_id}')
+            print(f' Driver Type: {table.driver_type}\n')
 
 
 class LookupTablesGetKeySubCommand(CLICommand):
@@ -335,20 +335,20 @@ class LookupTablesGetKeySubCommand(CLICommand):
 
         LookupTables.get_instance(config=config)
 
-        print('  Table: {}'.format(table_name))
-        print('  Key:   {}'.format(key))
+        print(f'  Table: {table_name}')
+        print(f'  Key:   {key}')
 
         value = LookupTables.get(table_name, key)
 
         print()
-        print('  Type:  {}'.format(type(value)))
+        print(f'  Type:  {type(value)}')
 
         if isinstance(value, (list, dict)):
             # Render lists and dicts a bit better to make them easier to read
             print('  Value:')
             print(json.dumps(value, indent=2, sort_keys=True))
         else:
-            print('  Value: {}'.format(value))
+            print(f'  Value: {value}')
 
         print()
 
@@ -425,13 +425,13 @@ class LookupTablesSetSubCommand(CLICommand):
 
         core = LookupTables.get_instance(config=config)
 
-        print('  Table: {}'.format(table_name))
-        print('  Key:   {}'.format(key))
+        print(f'  Table: {table_name}')
+        print(f'  Key:   {key}')
 
         table = core.table(table_name)
         old_value = table.get(key)
 
-        print('  Value: {} --> {}'.format(old_value, new_value))
+        print(f'  Value: {old_value} --> {new_value}')
 
         LookupTablesMagic.set_table_value(table, key, new_value)
 

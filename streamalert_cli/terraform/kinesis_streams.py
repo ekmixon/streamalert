@@ -32,11 +32,11 @@ def generate_kinesis_streams(cluster_name, cluster_dict, config):
     kinesis_module = config['clusters'][cluster_name]['modules']['kinesis']['streams']
     shard_level_metrics = kinesis_module.get('shard_level_metrics', [])
     stream_name = kinesis_module.get(
-        'stream_name',
-        '{}_{}_streamalert'.format(prefix, cluster_name)
+        'stream_name', f'{prefix}_{cluster_name}_streamalert'
     )
 
-    module_name = 'kinesis_{}'.format(cluster_name)
+
+    module_name = f'kinesis_{cluster_name}'
     cluster_dict['module'][module_name] = {
         'source': './modules/tf_kinesis_streams',
         'account_id': config['global']['account']['aws_account_id'],
@@ -55,8 +55,7 @@ def generate_kinesis_streams(cluster_name, cluster_dict, config):
         'trusted_accounts': kinesis_module.get('trusted_accounts', [])
     }
 
-    outputs = kinesis_module.get('terraform_outputs')
-    if outputs:
+    if outputs := kinesis_module.get('terraform_outputs'):
         generate_tf_outputs(cluster_dict, module_name, outputs)
 
     return True

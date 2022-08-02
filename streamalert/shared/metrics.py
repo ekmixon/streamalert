@@ -148,18 +148,29 @@ class MetricLogger:
             return
 
         if lambda_function not in cls._available_metrics:
-            LOGGER.error('Function \'%s\' not defined in available metrics. Options are: %s',
-                         lambda_function,
-                         ', '.join('\'{}\''.format(key) for key in cls._available_metrics
-                                   if cls._available_metrics[key]))
+            LOGGER.error(
+                'Function \'%s\' not defined in available metrics. Options are: %s',
+                lambda_function,
+                ', '.join(
+                    f"\'{key}\'"
+                    for key in cls._available_metrics
+                    if cls._available_metrics[key]
+                ),
+            )
+
             return
 
         if metric_name not in cls._available_metrics[lambda_function]:
-            LOGGER.error('Metric name (\'%s\') not defined for \'%s\' function. Options are: %s',
-                         metric_name,
-                         lambda_function,
-                         ', '.join('\'{}\''.format(value)
-                                   for value in cls._available_metrics[lambda_function]))
+            LOGGER.error(
+                'Metric name (\'%s\') not defined for \'%s\' function. Options are: %s',
+                metric_name,
+                lambda_function,
+                ', '.join(
+                    f"\'{value}\'"
+                    for value in cls._available_metrics[lambda_function]
+                ),
+            )
+
             return
 
         # Use a default format for logging this metric that will get picked up by the filters

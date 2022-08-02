@@ -130,18 +130,12 @@ class TestDemistoOutput:
             'createInvestigation': True,
         }
 
+
+
         class Matcher:
             def __eq__(self, other):
-                if other == expected_data:
-                    return True
+                return other == expected_data
 
-                # If you have trouble debugging the differences of the large JSON dicts like I did,
-                # pretty print the result!
-                #
-                # import pprint
-                # pp = pprint.PrettyPrinter(indent=4)
-                # pp.pprint(other)
-                return False
 
         request_mock.assert_called_with(
             'https://demisto.awesome-website.io/incident',

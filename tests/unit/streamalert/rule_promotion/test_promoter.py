@@ -31,10 +31,7 @@ _RULES_TABLE = 'unit-test_streamalert_rules'
 
 def _mock_boto(name, **kwargs):
     """Hack to allow mocking boto3.client with moto and our own class"""
-    if name == 'athena':
-        return MockAthenaClient()
-
-    return client(name, **kwargs)
+    return MockAthenaClient() if name == 'athena' else client(name, **kwargs)
 
 
 class TestRulePromoter:

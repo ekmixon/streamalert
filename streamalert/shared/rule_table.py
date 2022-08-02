@@ -51,7 +51,7 @@ class RuleTable:
         if not self.remote_rule_names:
             return 'Rule table is empty'
 
-        pad_size = max([len(rule) for rule in list(self.remote_rule_info.keys())]) + 4
+        pad_size = max(len(rule) for rule in list(self.remote_rule_info.keys())) + 4
         output = ['{rule:<{pad}}Staged?'.format(rule='Rule', pad=pad_size+5)]
         for index, rule in enumerate(sorted(self.remote_rule_info.keys()), start=1):
             output.append(
@@ -64,19 +64,26 @@ class RuleTable:
             )
             # Append additional information if verbose is enabled
             if verbose:
-                details_pad_size = max([len(prop)
-                                        for prop in list(self.remote_rule_info[rule].keys())]) + 4
+                details_pad_size = (
+                    max(
+                        len(prop)
+                        for prop in list(self.remote_rule_info[rule].keys())
+                    )
+                    + 4
+                )
+
                 output.extend(
                     '{prefix:>{left_pad}}{property: <{internal_pad}}{value}'.format(
                         prefix='- ',
                         left_pad=7,
-                        property='{}:'.format(prop),
+                        property=f'{prop}:',
                         internal_pad=details_pad_size,
-                        value=self.remote_rule_info[rule][prop]
+                        value=self.remote_rule_info[rule][prop],
                     )
                     for prop in sorted(self.remote_rule_info[rule].keys())
                     if prop != 'Staged'
                 )
+
 
         return '\n'.join(output)
 
@@ -173,10 +180,8 @@ class RuleTable:
             return item
 
         staged_at, staged_until = RuleTable._staged_window()
-        item.update({
-            'StagedAt': staged_at,
-            'StagedUntil': staged_until
-        })
+        item |= {'StagedAt': staged_at, 'StagedUntil': staged_until}
+
 
         return item
 
@@ -244,7 +249,7 @@ class RuleTable:
             'UpdateExpression': ','.join(update_expressions),
             'ExpressionAttributeValues': dict(list(zip(expression_attributes, expression_values)))
         }
-        args.update(self._default_dynamo_kwargs(rule_name))
+        args |= self._default_dynamo_kwargs(rule_name)
 
         self._table.update_item(**args)
 

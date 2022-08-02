@@ -102,11 +102,13 @@ def generate_firehose(logging_bucket, main_dict, config):
                 module_dict['period_seconds'] = alarm_info.get('period_seconds')
 
             if alarm_info.get('alarm_actions'):
-                if not isinstance(alarm_info.get('alarm_actions'), list):
-                    module_dict['alarm_actions'] = [alarm_info.get('alarm_actions')]
-                else:
-                    module_dict['alarm_actions'] = alarm_info.get('alarm_actions')
+                module_dict['alarm_actions'] = (
+                    alarm_info.get('alarm_actions')
+                    if isinstance(alarm_info.get('alarm_actions'), list)
+                    else [alarm_info.get('alarm_actions')]
+                )
+
             else:
                 module_dict['alarm_actions'] = [monitoring_topic_arn(config)]
 
-        main_dict['module']['kinesis_firehose_{}'.format(log_stream_name)] = module_dict
+        main_dict['module'][f'kinesis_firehose_{log_stream_name}'] = module_dict

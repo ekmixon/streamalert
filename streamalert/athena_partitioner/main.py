@@ -76,11 +76,8 @@ class AthenaPartitioner:
             self._alerts_regex = self.ALERTS_REGEX
             self._data_regex = self.DATA_REGEX
         else:
-            message = (
-                'file format "{}" is not supported. Supported file format are '
-                '"parquet", "json". Please update the setting in athena_partitioner_config '
-                'in "conf/lambda.json"'.format(self._file_format)
-            )
+            message = f'file format "{self._file_format}" is not supported. Supported file format are "parquet", "json". Please update the setting in athena_partitioner_config in "conf/lambda.json"'
+
             raise ConfigError(message)
 
         self._athena_buckets = athena_partition_buckets(config)
@@ -89,9 +86,9 @@ class AthenaPartitioner:
 
         # Get the S3 bucket to store Athena query results
         results_bucket = athena_config.get(
-            'results_bucket',
-            's3://{}-streamalert-athena-results'.format(prefix)
+            'results_bucket', f's3://{prefix}-streamalert-athena-results'
         )
+
 
         self._s3_buckets_and_keys = defaultdict(set)
 
@@ -106,7 +103,7 @@ class AthenaPartitioner:
 
         # Check if the database exists when the client is created
         if not cls._ATHENA_CLIENT.check_database_exists():
-            raise AthenaPartitionerError('The \'{}\' database does not exist'.format(db_name))
+            raise AthenaPartitionerError(f"The \'{db_name}\' database does not exist")
 
     def _get_partitions_from_keys(self):
         """Get the partitions that need to be added for the Athena tables
@@ -196,14 +193,15 @@ class AthenaPartitioner:
                          athena_table=athena_table,
                          partition_statement=partition_statement))
 
-            success = self._ATHENA_CLIENT.run_query(query=query)
-            if not success:
+            if success := self._ATHENA_CLIENT.run_query(query=query):
+                LOGGER.info('Successfully added the following partitions:\n%s',
+                            json.dumps({athena_table: partitions[athena_table]}))
+            else:
                 raise AthenaPartitionerError(
-                    'The add hive partition query has failed:\n{}'.format(query)
+                    f'The add hive partition query has failed:\n{query}'
                 )
 
-            LOGGER.info('Successfully added the following partitions:\n%s',
-                        json.dumps({athena_table: partitions[athena_table]}))
+
         return True
 
     def run(self, event):

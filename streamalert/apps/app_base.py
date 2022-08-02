@@ -135,7 +135,7 @@ class AppIntegration(metaclass=ABCMeta):
                 format they should follow
         """
         req_auth_info = cls._required_auth_info()
-        return req_auth_info if isinstance(req_auth_info, dict) else dict()
+        return req_auth_info if isinstance(req_auth_info, dict) else {}
 
     @classmethod
     @abstractmethod

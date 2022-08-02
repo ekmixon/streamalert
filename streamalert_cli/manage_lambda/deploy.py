@@ -135,14 +135,15 @@ def _update_rule_table(options, config):
     # Get the rule import paths to load
     rule_import_paths = config['global']['general']['rule_locations']
 
-    table_name = '{}_streamalert_rules'.format(config['global']['account']['prefix'])
+    table_name = f"{config['global']['account']['prefix']}_streamalert_rules"
     table = rule_table.RuleTable(table_name, *rule_import_paths)
     table.update(options.skip_rule_staging)
 
     if options.stage_rules or options.unstage_rules:
-        # Create a dictionary of rule_name: stage=True|False
-        rules = {rule_name: False for rule_name in options.unstage_rules}
-        rules.update({rule_name: True for rule_name in options.stage_rules})
+        rules = {rule_name: False for rule_name in options.unstage_rules} | {
+            rule_name: True for rule_name in options.stage_rules
+        }
+
         for rule, stage in rules.items():
             table.toggle_staged_state(rule, stage)
 
@@ -168,58 +169,60 @@ def _lambda_terraform_targets(config, functions, clusters):
                 'module.alert_processor_iam',
                 'module.alert_processor_lambda',
             },
-            'enabled': True  # required function
+            'enabled': True,  # required function
         },
         'alert_merger': {
             'targets': {
                 'module.alert_merger_iam',
                 'module.alert_merger_lambda',
             },
-            'enabled': True  # required function
+            'enabled': True,  # required function
         },
         'athena': {
             'targets': {
                 'module.athena_partitioner_iam',
                 'module.athena_partitioner_lambda',
             },
-            'enabled': True  # required function
+            'enabled': True,  # required function
         },
         'rule': {
             'targets': {
                 'module.rules_engine_iam',
                 'module.rules_engine_lambda',
             },
-            'enabled': True  # required function
+            'enabled': True,  # required function
         },
         'classifier': {
             'targets': {
-                'module.classifier_{}_{}'.format(cluster, suffix)
+                f'module.classifier_{cluster}_{suffix}'
                 for suffix in {'lambda', 'iam'}
                 for cluster in clusters
             },
-            'enabled': bool(clusters)  # one cluster at least is required
+            'enabled': bool(clusters),
         },
         'apps': {
             'targets': {
-                'module.app_{}_{}_{}'.format(app_info['app_name'], cluster, suffix)
+                f"module.app_{app_info['app_name']}_{cluster}_{suffix}"
                 for suffix in {'lambda', 'iam'}
                 for cluster in clusters
-                for app_info in config['clusters'][cluster]['modules'].get(
-                    'streamalert_apps', {}
-                ).values()
+                for app_info in config['clusters'][cluster]['modules']
+                .get('streamalert_apps', {})
+                .values()
                 if 'app_name' in app_info
             },
             'enabled': any(
                 info['modules'].get('streamalert_apps')
                 for info in config['clusters'].values()
-            )
+            ),
         },
         'rule_promo': {
             'targets': {
                 'module.rule_promotion_iam',
                 'module.rule_promotion_lambda',
             },
-            'enabled': config['lambda'].get('rule_promotion_config', {}).get('enabled', False)
+            'enabled': config['lambda']
+            .get('rule_promotion_config', {})
+            .get('enabled', False),
         },
         'scheduled_queries': {
             'targets': {
@@ -232,9 +235,12 @@ def _lambda_terraform_targets(config, functions, clusters):
                 'module.threat_intel_downloader',
                 'module.threat_intel_downloader_iam',
             },
-            'enabled': config['lambda'].get('threat_intel_downloader_config', False),
-        }
+            'enabled': config['lambda'].get(
+                'threat_intel_downloader_config', False
+            ),
+        },
     }
+
 
     targets = set()
     for function in functions:

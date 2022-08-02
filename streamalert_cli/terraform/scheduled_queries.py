@@ -28,7 +28,7 @@ def generate_scheduled_queries_module_configuration(config):
 
     # FIXME (derek.wang) make consistent with streamalert_athena module,
     # maybe make this dependent on output of that module?
-    database = athena_config.get('database_name', '{}_streamalert'.format(prefix))
+    database = athena_config.get('database_name', f'{prefix}_streamalert')
 
     # The results bucket cannot reference the output from the streamalert_athena module:
     #   '${module.athena_partitioner_iam.results_bucket_arn}'
@@ -73,9 +73,7 @@ def generate_scheduled_queries_module_configuration(config):
     ]
     for field in lambda_fields:
         if field in lambda_config:
-            scheduled_queries_module['lambda_{}'.format(field)] = (
-                lambda_config[field]
-            )
+            scheduled_queries_module[f'lambda_{field}'] = lambda_config[field]
 
     if scheduled_queries_module.get('lambda_alarms_enabled', False):
         scheduled_queries_module['lambda_alarm_actions'] = [monitoring_topic_arn(config)]

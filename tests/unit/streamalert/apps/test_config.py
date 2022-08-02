@@ -114,7 +114,7 @@ class TestAppConfig:
     def test_get_parameters_invalid_json(self):
         """AppConfig - Get Parameters, Invalid JSON"""
         with patch.dict(os.environ, {'AWS_DEFAULT_REGION': 'us-east-1'}):
-            key = '{}_state'.format(self._test_app_name)
+            key = f'{self._test_app_name}_state'
             boto3.client('ssm').put_parameter(
                 Name=key,
                 Value='foobar',
@@ -130,7 +130,7 @@ class TestAppConfig:
         with patch.object(AppConfig, 'MAX_STATE_SAVE_TRIES', 1):
             client_mock.get_parameters.side_effect = ClientError(
                 {'Error': {'Code': 'TEST', 'Message': 'BadError'}}, 'GetParameters')
-            self._config._get_parameters('{}_state'.format(self._test_app_name))
+            self._config._get_parameters(f'{self._test_app_name}_state')
 
     @patch('streamalert.apps.config.json')
     def test_get_parameters_bad_names(self, json_mock):

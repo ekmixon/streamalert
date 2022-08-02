@@ -48,9 +48,11 @@ def path_matches_any(text, patterns):
     Returns:
         bool: True if the text matches at least one of the patterns, False otherwise.
     """
-    if not isinstance(text, str):
-        return False
-    return any(pathlib2.PurePath(text).match(pattern) for pattern in patterns)
+    return (
+        any(pathlib2.PurePath(text).match(pattern) for pattern in patterns)
+        if isinstance(text, str)
+        else False
+    )
 
 
 def starts_with_any(text, prefixes):
@@ -66,9 +68,11 @@ def starts_with_any(text, prefixes):
     Returns:
         bool: True if the text starts with at least one of the given prefixes, False otherwise.
     """
-    if not isinstance(text, str):
-        return False
-    return any(text.startswith(prefix) for prefix in prefixes)
+    return (
+        any(text.startswith(prefix) for prefix in prefixes)
+        if isinstance(text, str)
+        else False
+    )
 
 
 def ends_with_any(text, suffixes):
@@ -84,9 +88,11 @@ def ends_with_any(text, suffixes):
     Returns:
         bool: True if the text ends with at least one of the given prefixes, False otherwise.
     """
-    if not isinstance(text, str):
-        return False
-    return any(text.endswith(suffix) for suffix in suffixes)
+    return (
+        any(text.endswith(suffix) for suffix in suffixes)
+        if isinstance(text, str)
+        else False
+    )
 
 
 def contains_any(text, substrings):
@@ -102,9 +108,7 @@ def contains_any(text, substrings):
     Returns:
         bool: True if the text contains at least one of the given prefixes, False otherwise.
     """
-    if not isinstance(text, str):
-        return False
-    return any(s in text for s in substrings)
+    return any(s in text for s in substrings) if isinstance(text, str) else False
 
 
 def matches_any(text, patterns):
@@ -121,9 +125,11 @@ def matches_any(text, patterns):
     Returns:
         bool: True if the text matches at least one of the patterns, False otherwise.
     """
-    if not isinstance(text, str):
-        return False
-    return any(fnmatch(text, pattern) for pattern in patterns)
+    return (
+        any(fnmatch(text, pattern) for pattern in patterns)
+        if isinstance(text, str)
+        else False
+    )
 
 
 def last_hour(unixtime, hours=1):
@@ -195,9 +201,7 @@ def data_has_value_from_list(data, needle_list):
     if isinstance(data, dict):
         return any(data_has_value_from_list(v, needle_list) for v in data.values())
 
-    if not data:
-        return False
-    return matches_any(data, needle_list)
+    return matches_any(data, needle_list) if data else False
 
 
 def data_has_value_from_substring_list(data, needle_list):
@@ -216,10 +220,7 @@ def data_has_value_from_substring_list(data, needle_list):
     if isinstance(data, dict):
         return any(data_has_value_from_substring_list(v, needle_list) for v in data.values())
 
-    if not data:
-        return False
-
-    return any(needle in data for needle in needle_list)
+    return any(needle in data for needle in needle_list) if data else False
 
 
 def safe_json_loads(data):

@@ -84,18 +84,18 @@ def firehose_data_bucket(config):
         string|bool: The bucket name to be used for historical data retention. Returns
             False if firehose is not configured
     """
-    # The default name is <prefix>-streamalert-data but can be overridden
-    firehose_config = config['global']['infrastructure'].get('firehose')
-    if not firehose_config:
-        return False
+    if firehose_config := config['global']['infrastructure'].get('firehose'):
+        return (
+            firehose_config.get(
+                'bucket_name',
+                f"{config['global']['account']['prefix']}-streamalert-data",
+            )
+            if firehose_config.get('enabled')
+            else False
+        )
 
-    if not firehose_config.get('enabled'):
+    else:
         return False
-
-    return firehose_config.get(
-        'bucket_name',
-        '{}-streamalert-data'.format(config['global']['account']['prefix'])
-    )
 
 
 def firehose_alerts_bucket(config):
@@ -109,9 +109,13 @@ def firehose_alerts_bucket(config):
     """
     # The default name is <prefix>-streamalerts but can be overridden
     # The alerts firehose is not optional, so this should always return a value
-    return config['global']['infrastructure'].get('alerts_firehose', {}).get(
-        'bucket_name',
-        '{}-streamalerts'.format(config['global']['account']['prefix'])
+    return (
+        config['global']['infrastructure']
+        .get('alerts_firehose', {})
+        .get(
+            'bucket_name',
+            f"{config['global']['account']['prefix']}-streamalerts",
+        )
     )
 
 
@@ -127,8 +131,7 @@ def athena_partition_buckets(config):
     athena_config = config['lambda']['athena_partitioner_config']
     data_buckets = athena_config.get('buckets', {})
     data_buckets[firehose_alerts_bucket(config)] = 'alerts'
-    data_bucket = firehose_data_bucket(config)  # Data retention is optional, so check for this
-    if data_bucket:
+    if data_bucket := firehose_data_bucket(config):
         data_buckets[data_bucket] = 'data'
 
     return data_buckets
@@ -174,8 +177,7 @@ def athena_query_results_bucket(config):
     prefix = config['global']['account']['prefix']
 
     return athena_config.get(
-        'results_bucket',
-        '{}-streamalert-athena-results'.format(prefix)
+        'results_bucket', f'{prefix}-streamalert-athena-results'
     ).strip()
 
 
@@ -302,14 +304,13 @@ def _load_schemas(schemas_dir, schema_files):
     Returns:
         OrderedDict: The sorted schema dictionary.
     """
-    schemas = dict()
+    schemas = {}
     for schema in schema_files:
         schemas_from_file = _load_json_file(os.path.join(schemas_dir, schema), True)
-        dup_schema = set(schemas).intersection(schemas_from_file)
-        if dup_schema:
+        if dup_schema := set(schemas).intersection(schemas_from_file):
             LOGGER.warning('Duplicate schema detected %s. This may result in undefined behavior.',
                            ', '.join(dup_schema))
-        schemas.update(schemas_from_file)
+        schemas |= schemas_from_file
     return OrderedDict(sorted(schemas.items(), key=SchemaSorter().sort_key))
 
 
@@ -332,7 +333,7 @@ def _load_json_file(path, ordered=False):
         try:
             return json.load(data, **kwargs)
         except ValueError:
-            raise ConfigError('Invalid JSON format for {}'.format(path))
+            raise ConfigError(f'Invalid JSON format for {path}')
 
 
 def _validate_config(config):
@@ -354,10 +355,10 @@ def _validate_config(config):
     if TopLevelConfigKeys.LOGS in config:
         for log, attrs in config[TopLevelConfigKeys.LOGS].items():
             if 'schema' not in attrs:
-                raise ConfigError("The 'schema' is missing for {}".format(log))
+                raise ConfigError(f"The 'schema' is missing for {log}")
 
             if 'parser' not in attrs:
-                raise ConfigError("The 'parser' is missing for {}".format(log))
+                raise ConfigError(f"The 'parser' is missing for {log}")
 
     # Check if the defined sources are supported and report any invalid entries
     if TopLevelConfigKeys.CLUSTERS in config:
@@ -365,15 +366,15 @@ def _validate_config(config):
         existing_sources = set()
         for cluster_name, cluster_attrs in config[TopLevelConfigKeys.CLUSTERS].items():
             if 'data_sources' not in cluster_attrs:
-                raise ConfigError("'data_sources' missing for cluster {}".format(cluster_name))
+                raise ConfigError(f"'data_sources' missing for cluster {cluster_name}")
             _validate_sources(cluster_name, cluster_attrs['data_sources'], existing_sources)
 
             for func in CLUSTERED_FUNCTIONS:
-                config_name = '{}_config'.format(func)
+                config_name = f'{func}_config'
                 if config_name in cluster_attrs:
                     continue
 
-                error = "'{}' is missing in the '{}' cluster".format(config_name, cluster_name)
+                error = f"'{config_name}' is missing in the '{cluster_name}' cluster"
 
                 modules = cluster_attrs.get('modules', {})
                 old_format = None
@@ -382,10 +383,8 @@ def _validate_config(config):
                         old_format = key
 
                 if old_format:
-                    error += (
-                        ". The usage of the '{}' within 'modules' has been deprecated and '{}'"
-                        "should be included as a top level key"
-                    ).format(old_format, config_name)
+                    error += f". The usage of the '{old_format}' within 'modules' has been deprecated and '{config_name}'should be included as a top level key"
+
 
                 raise ConfigError(error)
 
@@ -400,12 +399,14 @@ def _validate_config(config):
 
         for ioc_type, normalized_keys in normalized_ioc_types.items():
             for normalized_key in normalized_keys:
-                if not any(normalized_key in set(log_keys)
-                           for log_keys in
-                           list(config[TopLevelConfigKeys.NORMALIZED_TYPES].values())):
+                if all(
+                    normalized_key not in set(log_keys)
+                    for log_keys in list(
+                        config[TopLevelConfigKeys.NORMALIZED_TYPES].values()
+                    )
+                ):
                     raise ConfigError(
-                        "IOC key '{}' within IOC type '{}' must be defined for at least "
-                        "one log type in normalized types".format(normalized_key, ioc_type)
+                        f"IOC key '{normalized_key}' within IOC type '{ioc_type}' must be defined for at least one log type in normalized types"
                     )
 
 
@@ -422,24 +423,27 @@ def _validate_sources(cluster_name, data_sources, existing_sources):
     if not set(data_sources).issubset(SUPPORTED_SOURCES):
         invalid_sources = set(data_sources) - SUPPORTED_SOURCES
         raise ConfigError(
-            'The data sources for cluster {} contain invalid source entries: {}. '
-            'The following sources are supported: {}'.format(
-                cluster_name,
-                ', '.join("'{}'".format(source) for source in invalid_sources),
-                ', '.join("'{}'".format(source) for source in SUPPORTED_SOURCES)
+            (
+                'The data sources for cluster {} contain invalid source entries: {}. '
+                'The following sources are supported: {}'.format(
+                    cluster_name,
+                    ', '.join(f"'{source}'" for source in invalid_sources),
+                    ', '.join(f"'{source}'" for source in SUPPORTED_SOURCES),
+                )
             )
         )
+
     for attrs in data_sources.values():
         for source, logs in attrs.items():
 
             if not logs:
-                raise ConfigError("List of logs is empty for source: {}".format(source))
+                raise ConfigError(f"List of logs is empty for source: {source}")
 
             if source in existing_sources:
                 raise ConfigError(
-                    "Duplicate data_source in cluster configuration {} "
-                    "for cluster {}".format(source, cluster_name)
+                    f"Duplicate data_source in cluster configuration {source} for cluster {cluster_name}"
                 )
+
             existing_sources.add(source)
 
 # FIXME (derek.wang) write a configuration validator for lookuptables (new one)
@@ -452,12 +456,15 @@ def artifact_extractor_enabled(config):
     Returns:
         bool: return True is "artifact_extract" is enabled in conf/global.json
     """
-    if not config['global']['infrastructure'].get('artifact_extractor', {}).get('enabled', False):
-        return False
-
-    # Artifact Extractor is enabled once when firehose is enabled.
-    if not config['global']['infrastructure'].get('firehose', {}).get('enabled', False):
-        return False
-
-    return True
+    return (
+        bool(
+            config['global']['infrastructure']
+            .get('firehose', {})
+            .get('enabled', False)
+        )
+        if config['global']['infrastructure']
+        .get('artifact_extractor', {})
+        .get('enabled', False)
+        else False
+    )
     

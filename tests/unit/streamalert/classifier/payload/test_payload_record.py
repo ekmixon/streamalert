@@ -32,10 +32,10 @@ class TestPayloadRecord:
     @classmethod
     def _mock_parser(cls, records=None, invalid_records=None):
         return Mock(
-            parsed_records=records if records else [],
-            invalid_parses=invalid_records if invalid_records else [],
+            parsed_records=records or [],
+            invalid_parses=invalid_records or [],
             log_schema_type='foo:bar',
-            __nonzero__=lambda: records is not None
+            __nonzero__=lambda: records is not None,
         )
 
     def test_non_zero_false(self):

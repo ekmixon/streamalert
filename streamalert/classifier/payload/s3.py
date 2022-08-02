@@ -73,7 +73,7 @@ class S3Payload(StreamPayload):
         """Calculate and format a size for printing"""
         size_kb = round(self.size / 1024.0, 2)
         size_mb = round(size_kb / 1024.0, 2)
-        return '{}MB'.format(size_mb) if size_mb else '{}KB'.format(size_kb)
+        return f'{size_mb}MB' if size_mb else f'{size_kb}KB'
 
     @classmethod
     def service(cls):
@@ -98,8 +98,10 @@ class S3Payload(StreamPayload):
 
         # size greater than 128MB
         if self.size > self.MAX_S3_SIZE:
-            raise S3PayloadError('S3 object {}/{} is too large and cannot be downloaded '
-                                 'from S3: {}'.format(self.bucket, self.key, self.display_size))
+            raise S3PayloadError(
+                f'S3 object {self.bucket}/{self.key} is too large and cannot be downloaded from S3: {self.display_size}'
+            )
+
 
         return True
 
@@ -201,9 +203,7 @@ class S3Payload(StreamPayload):
             # Log a metric on how long this object took to download
             MetricLogger.log_metric(FUNCTION_NAME, MetricLogger.S3_DOWNLOAD_TIME, total_time)
 
-            for line_num, line in self._read_downloaded_object(download):
-                yield line_num, line
-
+            yield from self._read_downloaded_object(download)
             # Reading was a success, so truncate the file contents and return
             download.seek(0)
             download.truncate()

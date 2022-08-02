@@ -77,7 +77,7 @@ class ArtifactExtractor:
 
     def __init__(self, artifacts_fh_stream_name):
         self._dst_firehose_stream_name = artifacts_fh_stream_name
-        self._artifacts = list()
+        self._artifacts = []
 
         ArtifactExtractor._config = ArtifactExtractor._config or config.load_config(validate=True)
 
@@ -146,15 +146,17 @@ class ArtifactExtractor:
                     if not value.get(CONST_ARTIFACTS_FLAG, True):
                         continue
 
-                    for val in value.get('values', []):
-                        artifacts.append(Artifact(
+                    artifacts.extend(
+                        Artifact(
                             function=value.get('function'),
                             record_id=record_id,
                             # source_type=self._source_type,
                             source_type=source_type,
                             normalized_type=key,
-                            value=val
-                        ))
+                            value=val,
+                        )
+                        for val in value.get('values', [])
+                    )
 
         return artifacts
 

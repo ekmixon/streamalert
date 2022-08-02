@@ -81,8 +81,10 @@ class SlackApp(AppIntegration):
 
     def _check_for_more_to_poll(self, response):
         self._next_page += 1
-        return not ('paging' in list(response.keys()) and
-                    response['paging']['pages'] == response['paging']['page'])
+        return (
+            'paging' not in list(response.keys())
+            or response['paging']['pages'] != response['paging']['page']
+        )
 
     def _filter_response_entries(self, response):
         """The slack endpoints don't provide a programmatic way to filter for new results,
@@ -106,12 +108,13 @@ class SlackApp(AppIntegration):
         """
         headers = {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Bearer {}'.format(self._config.auth['auth_token'])
+            'Authorization': f"Bearer {self._config.auth['auth_token']}",
         }
+
 
         data = self._get_request_data()
 
-        url = '{}{}'.format(self._SLACK_API_BASE_URL, self._endpoint())
+        url = f'{self._SLACK_API_BASE_URL}{self._endpoint()}'
         success, response = self._make_post_request(url, headers, data, False)
 
         if not success:

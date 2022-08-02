@@ -204,9 +204,9 @@ def get_athena_client(config):
 
     # Get the S3 bucket to store Athena query results
     results_bucket = athena_config.get(
-        'results_bucket',
-        's3://{}-streamalert-athena-results'.format(prefix)
+        'results_bucket', f's3://{prefix}-streamalert-athena-results'
     )
+
 
     return AthenaClient(
         db_name,
@@ -275,7 +275,7 @@ def rebuild_partitions(table, bucket, config):
 
 def write_partitions_statements(statements, sanitized_table_name):
     """Write partitions statements to a file if re-creating new partitions failed"""
-    file_name = 'partitions_{}.txt'.format(sanitized_table_name)
+    file_name = f'partitions_{sanitized_table_name}.txt'
     LOGGER.error(
         'Rebuild partitions failed, writing to local file with name %s',
         file_name
@@ -409,11 +409,8 @@ def create_table(table, bucket, config, schema_override=None):
 
         athena_schema = helpers.logs_schema_to_athena_schema(sanitized_schema)
 
-        # Add envelope keys to Athena Schema
-        configuration_options = log_info.get('configuration')
-        if configuration_options:
-            envelope_keys = configuration_options.get('envelope_keys')
-            if envelope_keys:
+        if configuration_options := log_info.get('configuration'):
+            if envelope_keys := configuration_options.get('envelope_keys'):
                 sanitized_envelope_key_schema = FirehoseClient.sanitize_keys(envelope_keys)
                 # Note: this key is wrapped in backticks to be Hive compliant
                 athena_schema['`streamalert:envelope_keys`'] = helpers.logs_schema_to_athena_schema(
@@ -425,7 +422,7 @@ def create_table(table, bucket, config, schema_override=None):
             for override in schema_override:
                 column_name, column_type = override.split('=')
                 # Columns are escaped to avoid Hive issues with special characters
-                column_name = '`{}`'.format(column_name)
+                column_name = f'`{column_name}`'
                 if column_name in athena_schema:
                     athena_schema[column_name] = column_type
                     LOGGER.info('Applied schema override: %s:%s', column_name, column_type)
@@ -475,16 +472,17 @@ def create_log_tables(config):
 
     firehose_config = config['global']['infrastructure']['firehose']
     firehose_s3_bucket_suffix = firehose_config.get('s3_bucket_suffix', 'streamalert-data')
-    firehose_s3_bucket_name = '{}-{}'.format(config['global']['account']['prefix'],
-                                             firehose_s3_bucket_suffix)
+    firehose_s3_bucket_name = (
+        f"{config['global']['account']['prefix']}-{firehose_s3_bucket_suffix}"
+    )
+
 
     enabled_logs = FirehoseClient.load_enabled_log_sources(
         config['global']['infrastructure']['firehose'],
         config['logs']
     )
 
-    for log_stream_name in enabled_logs:
-        if not create_table(log_stream_name, firehose_s3_bucket_name, config):
-            return False
-
-    return True
+    return all(
+        create_table(log_stream_name, firehose_s3_bucket_name, config)
+        for log_stream_name in enabled_logs
+    )

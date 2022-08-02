@@ -42,13 +42,12 @@ class TestSQSClient:
             Mock(
                 sqs_messages=[
                     {
-                        'log_schema_type': 'log_type_{}'.format(i),
-                        'record': {
-                            'key_{}'.format(i): 'value_{}'.format(i)
-                        }
+                        'log_schema_type': f'log_type_{i}',
+                        'record': {f'key_{i}': f'value_{i}'},
                     }
                 ]
-            ) for i in range(count)
+            )
+            for i in range(count)
         ]
 
     def test_init_no_queue_url(self):

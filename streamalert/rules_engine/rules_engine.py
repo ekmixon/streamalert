@@ -128,7 +128,7 @@ class RulesEngine:
         LOGGER.info('Refreshing rule table (last refresh time: %s; current time: %s)',
                     cls._RULE_TABLE_LAST_REFRESH, now)
 
-        table_name = '{}_streamalert_rules'.format(env['STREAMALERT_PREFIX'])
+        table_name = f"{env['STREAMALERT_PREFIX']}_streamalert_rules"
         cls._rule_table = RuleTable(table_name)
         cls._RULE_TABLE_LAST_REFRESH = now
 
@@ -296,11 +296,7 @@ class RulesEngine:
                 # Case 1: outputs is a string
                 #   return outputs wrapped in a list
                 outputs = [outputs]
-            elif isinstance(outputs, list):
-                # Case 2: outputs is a list
-                #   return outputs
-                pass
-            else:
+            elif not isinstance(outputs, list):
                 # Case 3: outputs is neither a string or a list
                 #   return an empty list
                 outputs = []
@@ -323,19 +319,17 @@ class RulesEngine:
             # Case 1: output is not a string
             #   return False
             LOGGER.warning("Output (%s) is not a string", output)
-            valid = False
-        elif isinstance(output, str) and ":" not in output:
+            return False
+        elif ":" not in output:
             # Case 2: output is a string but missing ":"
             #   Log warning and return False
             LOGGER.warning("Output (%s) is missing ':'", output)
 
-            valid = False
+            return False
         else:
             # Case 3: output is a string and contains ":"
             # return True
-            valid = True
-
-        return valid
+            return True
 
     @classmethod
     def _configure_publishers(cls, rule, requested_outputs):
@@ -496,8 +490,7 @@ class RulesEngine:
                 if not rule.check_matchers(payload['record']):
                     continue
 
-                alert = self._rule_analysis(payload, rule)
-                if alert:
+                if alert := self._rule_analysis(payload, rule):
                     alerts.append(alert)
 
         self._alert_forwarder.send_alerts(alerts)

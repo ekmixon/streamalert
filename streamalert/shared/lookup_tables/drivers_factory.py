@@ -30,5 +30,5 @@ def construct_persistence_driver(table_configuration):
         return EphemeralDriver(table_configuration)
 
     raise LookupTablesConfigurationError(
-        'Unrecognized driver name: {}'.format(driver_name)
+        f'Unrecognized driver name: {driver_name}'
     )

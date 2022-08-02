@@ -232,8 +232,9 @@ class TestRunner:
         env = {
             'STREAMALERT_PREFIX': prefix,
             'AWS_ACCOUNT_ID': self._config['global']['account']['aws_account_id'],
-            'ALERTS_TABLE': '{}_streamalert_alerts'.format(prefix),
+            'ALERTS_TABLE': f'{prefix}_streamalert_alerts',
         }
+
 
         if 'stats' in options and options.stats:
             env['STREAMALERT_TRACK_RULE_STATS'] = '1'
@@ -276,18 +277,16 @@ class TestRunner:
             return alert_proc.run(event=record.dynamo_record())
 
     def _check_prereqs(self):
-        if self._type == self.Types.LIVE:
-            return check_credentials()
-
-        return True
+        return check_credentials() if self._type == self.Types.LIVE else True
 
     def _finalize(self):
         summary = [
             format_underline('\nSummary:\n'),
-            'Total Tests: {}'.format(self._passed + self._failed),
-            format_green('Pass: {}'.format(self._passed)) if self._passed else 'Pass: 0',
-            format_red('Fail: {}\n'.format(self._failed)) if self._failed else 'Fail: 0\n',
+            f'Total Tests: {self._passed + self._failed}',
+            format_green(f'Pass: {self._passed}') if self._passed else 'Pass: 0',
+            format_red(f'Fail: {self._failed}\n') if self._failed else 'Fail: 0\n',
         ]
+
 
         print('\n'.join(summary))
 
@@ -311,7 +310,7 @@ class TestRunner:
 
     def _process_directory(self, directory):
         """Process rules and test files in the the rule directory"""
-        print('\nRunning tests for files found in: {}'.format(directory))
+        print(f'\nRunning tests for files found in: {directory}')
 
         for root, event_files in self._get_test_files(directory):
             for event_file in event_files:
@@ -357,10 +356,8 @@ class TestRunner:
 
             # A misconfigured test event and/or cluster config can cause this to be unset
             if 'CLUSTER' not in os.environ:
-                error = (
-                    'Test event\'s "service" ({}) and "source" ({}) are not defined within '
-                    'the "data_sources" of any configured clusters: {}:{}'
-                ).format(event.service, event.source, event_file.path, event.index)
+                error = f"""Test event\'s "service" ({event.service}) and "source" ({event.source}) are not defined within the "data_sources" of any configured clusters: {event_file.path}:{event.index}"""
+
                 raise ConfigError(error)
 
             classifier_result = self._run_classification(event.record)
@@ -396,9 +393,10 @@ class TestRunner:
         # It is possible for a test_event to have no results, but contain errors
         # so only print it if it does and if quiet mode is not being used
         # Quite mode is overridden if not all of the events passed
-        if event_file.error or not (self._quiet and event_file.all_passed):
-            if event_file.should_print:
-                print(event_file)
+        if (
+            event_file.error or not self._quiet or not event_file.all_passed
+        ) and event_file.should_print:
+            print(event_file)
 
     def run(self):
         """Run the tests"""
@@ -424,15 +422,12 @@ class TestRunner:
             str: Path to test event file
         """
         for root, _, test_event_files in os.walk(directory):
-            # Simple filter to remove any non-json files first
-            files = [
-                file for file in sorted(test_event_files)
+            if files := [
+                file
+                for file in sorted(test_event_files)
                 if os.path.splitext(file)[1] == '.json'
-            ]
-            if not files:
-                continue
-
-            yield root, files
+            ]:
+                yield root, files
 
 
 class PublisherTestRunner:

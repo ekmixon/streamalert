@@ -37,7 +37,7 @@ class RulePromoter:
         prefix = self._config['global']['account']['prefix']
 
         # Create the rule table class for getting staging information
-        self._rule_table = RuleTable('{}_streamalert_rules'.format(prefix))
+        self._rule_table = RuleTable(f'{prefix}_streamalert_rules')
 
         athena_config = self._config['lambda']['athena_partitioner_config']
 
@@ -46,13 +46,13 @@ class RulePromoter:
 
         # Get the S3 bucket to store Athena query results
         results_bucket = athena_config.get(
-            'results_bucket',
-            's3://{}-streamalert-athena-results'.format(prefix)
+            'results_bucket', f's3://{prefix}-streamalert-athena-results'
         )
+
 
         self._athena_client = AthenaClient(db_name, results_bucket, self.ATHENA_S3_PREFIX)
         self._current_time = datetime.utcnow()
-        self._staging_stats = dict()
+        self._staging_stats = {}
 
     def _get_staging_info(self):
         """Query the Rule table for rule staging info needed to count each rule's alerts

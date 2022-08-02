@@ -47,9 +47,9 @@ def generate_cloudtrail(cluster_name, cluster_dict, config):
     enable_s3_events = s3_settings.get('enable_events', False)
 
     s3_bucket_name = s3_settings.get(
-        'bucket_name',
-        '{}-{}-streamalert-cloudtrail'.format(prefix, cluster_name)
+        'bucket_name', f'{prefix}-{cluster_name}-streamalert-cloudtrail'
     )
+
 
     primary_account_id = config['global']['account']['aws_account_id']
     account_ids = set(s3_settings.get('cross_account_ids', []))
@@ -103,7 +103,7 @@ def generate_cloudtrail(cluster_name, cluster_dict, config):
             '${{module.cloudtrail_cloudwatch_{}.cloudwatch_logs_group_arn}}'.format(cluster_name)
         )
 
-    cluster_dict['module']['cloudtrail_{}'.format(cluster_name)] = module_info
+    cluster_dict['module'][f'cloudtrail_{cluster_name}'] = module_info
 
     if enable_s3_events:
         ignore_digest = s3_settings.get('ignore_digest', True)
@@ -118,14 +118,14 @@ def generate_cloudtrail(cluster_name, cluster_dict, config):
         bucket_info = {
             s3_bucket_name: [
                 {
-                    'filter_prefix': (
-                        'AWSLogs/{}/CloudTrail/'.format(account_id)
-                        if ignore_digest else
-                        'AWSLogs/{}/'.format(account_id)
-                    )
-                } for account_id in s3_event_account_ids
+                    'filter_prefix': f'AWSLogs/{account_id}/CloudTrail/'
+                    if ignore_digest
+                    else f'AWSLogs/{account_id}/'
+                }
+                for account_id in s3_event_account_ids
             ]
         }
+
         generate_s3_events_by_bucket(
             cluster_name,
             cluster_dict,
@@ -170,6 +170,6 @@ def generate_cloudtrail_cloudwatch(cluster_name, cluster_dict, config, settings,
 
     module_info['cloudwatch_destination_arn'] = destination_arn
 
-    cluster_dict['module']['cloudtrail_cloudwatch_{}'.format(cluster_name)] = module_info
+    cluster_dict['module'][f'cloudtrail_cloudwatch_{cluster_name}'] = module_info
 
     return True

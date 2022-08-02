@@ -77,7 +77,7 @@ class AppConfig:
     def successive_event(self):
         """Return formatted json for event representing a successive invocation"""
         event = {'invocation_type': self.Events.SUCCESSIVE_INVOKE}
-        event.update(self._event)
+        event |= self._event
         return json.dumps(event)
 
     @property
@@ -103,7 +103,7 @@ class AppConfig:
     @property
     def _state_name(self):
         """The name of the state parameter in ssm"""
-        return '{}_{}'.format(self.function_name, self.STATE_CONFIG_SUFFIX)
+        return f'{self.function_name}_{self.STATE_CONFIG_SUFFIX}'
 
     @staticmethod
     def remaining_ms():
@@ -147,8 +147,10 @@ class AppConfig:
 
         # Check to see if the authentication param is in the invalid params list
         if auth_param_name in invalid_params:
-            raise AppConfigError('Could not load authentication parameter required for this '
-                                 'app: {}'.format(auth_param_name))
+            raise AppConfigError(
+                f'Could not load authentication parameter required for this app: {auth_param_name}'
+            )
+
 
         LOGGER.debug('Retrieved parameters from parameter store: %s',
                      cls._scrub_auth_info(params, auth_param_name))
@@ -196,15 +198,16 @@ class AppConfig:
         """
         # The config validates that the 'auth' dict was loaded, but do a safety check here
         if not self.auth:
-            raise AppAuthError('[{}] Auth config is empty'.format(self))
+            raise AppAuthError(f'[{self}] Auth config is empty')
 
         auth_key_diff = required_keys.difference(set(self.auth))
         if not auth_key_diff:
             return True
 
-        missing_auth_keys = ', '.join('\'{}\''.format(key) for key in auth_key_diff)
-        raise AppAuthError('[{}] Auth config is missing the following '
-                           'required keys: {}'.format(self, missing_auth_keys))
+        missing_auth_keys = ', '.join(f"\'{key}\'" for key in auth_key_diff)
+        raise AppAuthError(
+            f'[{self}] Auth config is missing the following required keys: {missing_auth_keys}'
+        )
 
     @classmethod
     def _get_parameters(cls, *names):
@@ -228,26 +231,32 @@ class AppConfig:
             )
             AppConfig.SSM_CLIENT = boto3.client('ssm', config=boto_config)
 
-        LOGGER.debug('Retrieving values from parameter store with names: %s',
-                     ', '.join('\'{}\''.format(name) for name in names))
+        LOGGER.debug(
+            'Retrieving values from parameter store with names: %s',
+            ', '.join(f"\'{name}\'" for name in names),
+        )
+
         try:
             parameters = AppConfig.SSM_CLIENT.get_parameters(
                 Names=list(names),
                 WithDecryption=True
             )
         except ClientError as err:
-            joined_names = ', '.join('\'{}\''.format(name) for name in names)
-            raise AppConfigError('Could not get parameter with names {}. Error: '
-                                 '{}'.format(joined_names, err.response['Error']['Message']))
+            joined_names = ', '.join(f"\'{name}\'" for name in names)
+            raise AppConfigError(
+                f"Could not get parameter with names {joined_names}. Error: {err.response['Error']['Message']}"
+            )
+
 
         decoded_params = {}
         for param in parameters['Parameters']:
             try:
                 decoded_params[param['Name']] = json.loads(param['Value'])
             except ValueError:
-                raise AppConfigError('Could not load value for parameter with '
-                                     'name \'{}\'. The value is not valid json: '
-                                     '\'{}\''.format(param['Name'], param['Value']))
+                raise AppConfigError(
+                    f"Could not load value for parameter with name \'{param['Name']}\'. The value is not valid json: \'{param['Value']}\'"
+                )
+
 
         return decoded_params, parameters['InvalidParameters']
 
@@ -323,9 +332,10 @@ class AppConfig:
         if not event_key_diff:
             return
 
-        missing_event_keys = ', '.join('\'{}\''.format(key) for key in event_key_diff)
-        raise AppConfigError('App event is missing the following required '
-                             'keys: {}'.format(missing_event_keys))
+        missing_event_keys = ', '.join(f"\'{key}\'" for key in event_key_diff)
+        raise AppConfigError(
+            f'App event is missing the following required keys: {missing_event_keys}'
+        )
 
     def _evaluate_interval(self):
         """Get the interval at which this function is executing. This translates
@@ -334,8 +344,7 @@ class AppConfig:
         rate_match = AWS_RATE_RE.match(self._schedule)
 
         if not rate_match:
-            raise AppConfigError('Invalid \'rate\' interval value: '
-                                 '{}'.format(self._schedule))
+            raise AppConfigError(f"Invalid \'rate\' interval value: {self._schedule}")
 
         value = rate_match.group(2) or rate_match.group(4)
         unit = rate_match.group(3) or rate_match.group(5).replace('s', '')
@@ -414,7 +423,7 @@ class AppConfig:
             return
 
         if not isinstance(context, dict):
-            raise AppStateError('Unable to set context, must be a dict: {}'.format(context))
+            raise AppStateError(f'Unable to set context, must be a dict: {context}')
 
         LOGGER.debug('Setting context to: %s', context)
 

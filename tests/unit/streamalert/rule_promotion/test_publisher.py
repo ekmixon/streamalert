@@ -45,8 +45,9 @@ class TestStatsPublisher:
                 staged_at=stage_time,
                 staged_until=stage_time + timedelta(days=2),
                 current_time=stage_time + timedelta(days=1),
-                rule='test_rule_{}'.format(i)
+                rule=f'test_rule_{i}',
             )
+
             stat.alert_count = i + 1
             yield stat
 

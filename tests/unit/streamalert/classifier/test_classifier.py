@@ -113,8 +113,8 @@ class TestClassifier:
     def _mock_payload_record(cls):
         return Mock(
             data={'key': 'value'},
-            parsed_records=[{'key_{}'.format(i): 'value'} for i in range(2)],
-            invalid_records=[{'key_{}'.format(i): 'value'} for i in range(1)],
+            parsed_records=[{f'key_{i}': 'value'} for i in range(2)],
+            invalid_records=[{f'key_{i}': 'value'} for i in range(1)],
             log_schema_type='foo:bar',
             log_type='foo',
             __nonzero__=lambda s: True,
@@ -267,11 +267,11 @@ class TestClassifier:
 
     # Since we mock the Normalizer, we must also mock the class variable
     # referenced in the class methods.
-    @patch('streamalert.shared.normalize.Normalizer._types_config', dict())
+    @patch('streamalert.shared.normalize.Normalizer._types_config', {})
     def test_classify_payload_bad_record(self):
         """Classifier - Classify Payload, Bad Record"""
         with patch.object(Classifier, '_process_log_schemas'), \
-             patch.object(Classifier, '_log_bad_records') as log_mock:
+                 patch.object(Classifier, '_log_bad_records') as log_mock:
 
             payload_record = self._mock_payload_record()
             payload_record.__nonzero__ = lambda s: False

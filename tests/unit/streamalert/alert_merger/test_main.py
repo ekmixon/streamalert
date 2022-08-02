@@ -158,7 +158,7 @@ class TestAlertMerger:
 
         groups = main.AlertMerger._merge_groups(alerts)
         assert_equal(4, len(groups))
-        assert_equal(alerts[0:2], groups[0].alerts)
+        assert_equal(alerts[:2], groups[0].alerts)
         assert_equal(alerts[2:5], groups[1].alerts)
         assert_equal(alerts[5:7], groups[2].alerts)
         assert_equal([alerts[7]], groups[3].alerts)
@@ -175,7 +175,7 @@ class TestAlertMerger:
         # Since max alerts per group is 2, it should create 3 merged groups.
         groups = main.AlertMerger._merge_groups(alerts)
         assert_equal(3, len(groups))
-        assert_equal(alerts[0:2], groups[0].alerts)
+        assert_equal(alerts[:2], groups[0].alerts)
         assert_equal(alerts[2:4], groups[1].alerts)
         assert_equal(alerts[4:], groups[2].alerts)
 

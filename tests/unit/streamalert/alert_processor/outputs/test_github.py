@@ -52,7 +52,7 @@ class TestGithubOutput:
     def test_dispatch_success(self, url_mock, log_mock):
         """GithubOutput - Dispatch Success"""
         url_mock.return_value.status_code = 200
-        url_mock.return_value.json.return_value = dict()
+        url_mock.return_value.json.return_value = {}
 
         assert_true(self._dispatcher.dispatch(get_alert(), self.OUTPUT))
 
@@ -62,8 +62,11 @@ class TestGithubOutput:
 
         credentials = url_mock.call_args[1]['headers']['Authorization'].split(' ')[-1]
         decoded_username_password = base64.b64decode(credentials)
-        assert_equal(decoded_username_password, "{}:{}".format(self.CREDS['username'],
-                                                               self.CREDS['access_token']).encode())
+        assert_equal(
+            decoded_username_password,
+            f"{self.CREDS['username']}:{self.CREDS['access_token']}".encode(),
+        )
+
 
         log_mock.assert_called_with('Successfully sent alert to %s:%s',
                                     self.SERVICE, self.DESCRIPTOR)
@@ -73,7 +76,7 @@ class TestGithubOutput:
     def test_dispatch_success_with_labels(self, url_mock, log_mock):
         """GithubOutput - Dispatch Success with Labels"""
         url_mock.return_value.status_code = 200
-        url_mock.return_value.json.return_value = dict()
+        url_mock.return_value.json.return_value = {}
 
         assert_true(self._dispatcher.dispatch(get_alert(), self.OUTPUT))
 

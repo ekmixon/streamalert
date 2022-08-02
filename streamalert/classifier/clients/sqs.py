@@ -52,15 +52,14 @@ class SQSClient:
     _queue = None
 
     def __init__(self):
-        queue_url = os.environ.get('SQS_QUEUE_URL', '')
-        if not queue_url:
+        if queue_url := os.environ.get('SQS_QUEUE_URL', ''):
+            # Only recreate the queue resource if it's not already cached
+            SQSClient._queue = (
+                SQSClient._queue or
+                boto3.resource('sqs', config=boto.default_config()).Queue(queue_url)
+            )
+        else:
             raise SQSClientError('No queue URL found in environment variables')
-
-        # Only recreate the queue resource if it's not already cached
-        SQSClient._queue = (
-            SQSClient._queue or
-            boto3.resource('sqs', config=boto.default_config()).Queue(queue_url)
-        )
 
     @property
     def queue(self):
@@ -80,17 +79,19 @@ class SQSClient:
                 MetricLogger.log_metric(FUNCTION_NAME, MetricLogger.SQS_FAILED_RECORDS, 1)
                 continue
 
-            if idx == record_count or size + batch_size >= cls.MAX_SIZE:
+            if idx == record_count:
                 if size + batch_size >= cls.MAX_SIZE:
                     yield batch[:], len(batch)
 
-                if idx == record_count:  # the end of the records
-                    if size + batch_size < cls.MAX_SIZE:  # this record fits on current batch
-                        batch.append(record)
-                        yield batch[:], len(batch)
-                    else:
-                        yield [record], 1
-                    return
+                if size + batch_size < cls.MAX_SIZE:  # this record fits on current batch
+                    batch.append(record)
+                    yield batch[:], len(batch)
+                else:
+                    yield [record], 1
+                return
+
+            elif size + batch_size >= cls.MAX_SIZE:
+                yield batch[:], len(batch)
 
                 del batch[:]
                 batch_size = 2

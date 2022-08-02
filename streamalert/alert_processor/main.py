@@ -88,7 +88,10 @@ class AlertProcessor:
             dispatcher = self._create_dispatcher(output)
             result[output] = dispatcher.dispatch(alert, output) if dispatcher else False
 
-        alert.outputs_sent = set(output for output, success in list(result.items()) if success)
+        alert.outputs_sent = {
+            output for output, success in list(result.items()) if success
+        }
+
         return result
 
     @backoff.on_exception(backoff.expo, ClientError,

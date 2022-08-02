@@ -43,8 +43,9 @@ class KinesisCommand(CLICommand):
             'action',
             metavar='ACTION',
             choices=actions,
-            help='One of the following actions to be performed: {}'.format(', '.join(actions))
+            help=f"One of the following actions to be performed: {', '.join(actions)}",
         )
+
 
         # Add the option to specify cluster(s)
         add_clusters_arg(subparser)
@@ -79,12 +80,14 @@ class KinesisCommand(CLICommand):
         if options.skip_terraform:
             return True  # not an error
 
-        if not terraform_generate_handler(config):
-            return False
-
-        return terraform_runner(
-            config,
-            targets=[
-                'module.{}_{}'.format('kinesis_events', cluster) for cluster in config.clusters()
-            ]
+        return (
+            terraform_runner(
+                config,
+                targets=[
+                    f'module.kinesis_events_{cluster}'
+                    for cluster in config.clusters()
+                ],
+            )
+            if terraform_generate_handler(config)
+            else False
         )

@@ -82,7 +82,7 @@ class RuleDescriptionParser:
             dict: A dict mapping fields to lists of strings, each corresponding to a line belonging
                   to that field. All field names are lowercase.
         """
-        rule_description = '' if not rule_description else rule_description
+        rule_description = rule_description or ''
         tokens = [line.strip() for line in rule_description.strip().split('\n')]
 
         field_lines = {}
@@ -136,7 +136,7 @@ class RuleDescriptionParser:
                     if match is not None:
                         document += line
                     else:
-                        space = buffered_newlines if buffered_newlines else ' '
+                        space = buffered_newlines or ' '
                         buffered_newlines = ''
                         document += space + line
 

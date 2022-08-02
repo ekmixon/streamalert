@@ -38,8 +38,9 @@ class CommandProcessor:
             bool: True when all work is finished. False otherwise.
         """
         self._logger.info(
-            'Discovered {} query packs to execute'.format(self._manager.num_registered_queries)
+            f'Discovered {self._manager.num_registered_queries} query packs to execute'
         )
+
 
         self._manager.initialize_query_packs()
         self._manager.start_queries()
@@ -75,11 +76,9 @@ class CommandProcessor:
             # uh o
             self._logger.error('ENCOUNTERED ERROR')
             self._logger.error(
-                'QUERY FOR {} (Execution Id = {}) HAS FAILED'.format(
-                    query_pack.query_pack_configuration.name,
-                    query_execution_id
-                )
+                f'QUERY FOR {query_pack.query_pack_configuration.name} (Execution Id = {query_execution_id}) HAS FAILED'
             )
+
             self._logger.error(query_execution.status_description)
 
             self._kinesis.send_error_results(query_pack)

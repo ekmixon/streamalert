@@ -90,7 +90,7 @@ class TestResult(TestEvent):
         }
 
         if self.error:
-            fmt['error'] = format_red('Error - {}'.format(self.error))
+            fmt['error'] = format_red(f'Error - {self.error}')
             return self._ERROR_TEMPLATE.format(**fmt)
 
         if self.passed and not self._verbose:
@@ -136,8 +136,7 @@ class TestResult(TestEvent):
                 self._triggered_rules
             )
 
-            disabled = self._disabled_rules
-            if disabled:
+            if disabled := self._disabled_rules:
                 template += self._DISABLED_RULES_TEMPLATE
                 fmt['disabled_rules'] = ', '.join(disabled)
 
@@ -156,18 +155,20 @@ class TestResult(TestEvent):
                 num_pass += 1 if result['success'] else 0
 
             fmt['publishers_status'] = (
-                format_green('{}/{} Passed'.format(num_pass, num_total))
+                format_green(f'{num_pass}/{num_total} Passed')
                 if num_pass == num_total
-                else format_red('{}/{} Passed'.format(num_pass, num_total))
+                else format_red(f'{num_pass}/{num_total} Passed')
             )
+
             pad = ' ' * self._DEFAULT_INDENT * 3
             fmt['publisher_errors'] = (
-                format_red('\n'.join([
-                    '{}{}'.format(pad, error) for error in self.publisher_errors
-                ]))
+                format_red(
+                    '\n'.join([f'{pad}{error}' for error in self.publisher_errors])
+                )
                 if self.publisher_errors
-                else '{}{}'.format(pad, self._NONE_STRING)
+                else f'{pad}{self._NONE_STRING}'
             )
+
 
         return textwrap.dedent(template.format(**fmt)).rstrip() + '\n'
 
@@ -216,7 +217,7 @@ class TestResult(TestEvent):
         result = []
         for value in sorted(items):
             if value not in all_rules:
-                value = '{} (does not exist)'.format(value)
+                value = f'{value} (does not exist)'
 
             result.append(format_red(value) if value not in compare_set else value)
         return ', '.join(result)
@@ -255,7 +256,11 @@ class TestResult(TestEvent):
                 for value in values[rule_name]
             )
 
-        return self._NONE_STRING if not result_block else '\n{}'.format('\n'.join(result_block))
+        return (
+            '\n{}'.format('\n'.join(result_block))
+            if result_block
+            else self._NONE_STRING
+        )
 
     @property
     def rule_tests_were_run(self):
@@ -295,12 +300,13 @@ class TestResult(TestEvent):
 
         Also returns False if live tests were not run
         """
-        if not self.has_live_tests:
-            return False
-        for result in self._live_test_results.values():
-            if not all(status for status in result.values()):
-                return False
-        return True
+        return (
+            all(
+                all(result.values()) for result in self._live_test_results.values()
+            )
+            if self.has_live_tests
+            else False
+        )
 
     @property
     def publisher_tests_passed(self):
@@ -308,14 +314,11 @@ class TestResult(TestEvent):
 
         Also returns False if publisher tests were not run
         """
-        if not self.publisher_tests_were_run:
-            return False
-
-        for result in self._publication_results:
-            if not result['success']:
-                return False
-
-        return True
+        return (
+            all(result['success'] for result in self._publication_results)
+            if self.publisher_tests_were_run
+            else False
+        )
 
     @property
     def publisher_errors(self):
@@ -325,23 +328,20 @@ class TestResult(TestEvent):
 
             [output:descriptor]: (Error Type) Error message
         """
-        if not self.publisher_tests_were_run:
-            return []
-
-        return [
-            "{}: {}".format(
-                item['output_descriptor'],
-                "({}) {}".format(
-                    type(item['error']).__name__,
-                    item['error']
+        return (
+            [
+                "{}: {}".format(
+                    item['output_descriptor'],
+                    f"({type(item['error']).__name__}) {item['error']}"
+                    if 'error' in item
+                    else item['failure'],
                 )
-                if 'error' in item
-                else item['failure']
-            )
-            for item
-            in self._publication_results
-            if not item['success']
-        ]
+                for item in self._publication_results
+                if not item['success']
+            ]
+            if self.publisher_tests_were_run
+            else []
+        )
 
     @property
     def count_publisher_tests_passed(self):
@@ -364,19 +364,13 @@ class TestResult(TestEvent):
         if not self.classification_tests_passed:
             return False
 
-        if self.rule_tests_were_run:
-            if not self.rule_tests_passed:
-                return False
+        if self.rule_tests_were_run and not self.rule_tests_passed:
+            return False
 
-        if self.has_live_tests:
-            if not self.live_tests_passed:
-                return False
+        if self.has_live_tests and not self.live_tests_passed:
+            return False
 
-        if self.publisher_tests_were_run:
-            if not self.publisher_tests_passed:
-                return False
-
-        return True
+        return bool(not self.publisher_tests_were_run or self.publisher_tests_passed)
 
     def set_classified_result(self, classified_result):
         self._classified_result = classified_result[0] if classified_result else None

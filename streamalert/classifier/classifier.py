@@ -92,18 +92,14 @@ class Classifier:
         # Get all logs for the configured service/entity (s3, kinesis, or sns)
         resources = self._config['clusters'][self._cluster]['data_sources'].get(service)
         if not resources:
-            error = 'Service [{}] not declared in sources configuration for resource [{}]'.format(
-                service,
-                resource
-            )
+            error = f'Service [{service}] not declared in sources configuration for resource [{resource}]'
+
             raise ConfigError(error)
 
         source_config = resources.get(resource)
         if not source_config:
-            error = 'Resource [{}] not declared in sources configuration for service [{}]'.format(
-                resource,
-                service
-            )
+            error = f'Resource [{resource}] not declared in sources configuration for service [{service}]'
+
             raise ConfigError(error)
 
         # Get the log schemas for source(s)

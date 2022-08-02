@@ -146,8 +146,7 @@ class ThreatIntel:
                 LOGGER.exception('An error occurred while querying dynamodb table')
                 continue
 
-            for ioc in query_result:
-                yield ioc
+            yield from query_result
 
     @classmethod
     def _segment(cls, potential_iocs):

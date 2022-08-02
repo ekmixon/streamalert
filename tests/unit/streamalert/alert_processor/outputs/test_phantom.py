@@ -133,7 +133,7 @@ class TestPhantomOutput:
         get_mock.return_value.json.return_value = {'count': 0, 'data': []}
         # _setup_container
         post_mock.return_value.status_code = 200
-        post_mock.return_value.json.return_value = dict()
+        post_mock.return_value.json.return_value = {}
 
         assert_false(self._dispatcher.dispatch(get_alert(), self.OUTPUT))
 
@@ -179,7 +179,7 @@ class TestPhantomOutput:
                                                     self.CREDS['url'],
                                                     headers))
 
-        full_url = '{}/rest/container'.format(self.CREDS['url'])
+        full_url = f"{self.CREDS['url']}/rest/container"
         params = {'_filter_name': '"rule_name"', 'page_size': 1}
         get_mock.assert_has_calls([call(full_url, params, headers, False)])
         ph_container = {'name': 'rule_name', 'description': rule_description}

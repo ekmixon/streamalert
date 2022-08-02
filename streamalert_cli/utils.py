@@ -114,12 +114,12 @@ class MutuallyExclusiveStagingAction(Action):
             'and the \'--unstage-rules\' argument: {}'
         )
         if namespace.unstage_rules:
-            offending_rules = unique_items.intersection(namespace.unstage_rules)
-            if offending_rules:
+            if offending_rules := unique_items.intersection(
+                namespace.unstage_rules
+            ):
                 raise parser.error(error.format(', '.join(list(offending_rules))))
         if namespace.stage_rules:
-            offending_rules = unique_items.intersection(namespace.stage_rules)
-            if offending_rules:
+            if offending_rules := unique_items.intersection(namespace.stage_rules):
                 raise parser.error(error.format(', '.join(list(offending_rules))))
         setattr(namespace, self.dest, unique_items)
 
@@ -131,7 +131,7 @@ class DirectoryType:
         if os.path.isdir(value):
             return value
 
-        raise ArgumentTypeError('\'{}\' is not a directory'.format(value))
+        raise ArgumentTypeError(f"\'{value}\' is not a directory")
 
 
 def add_timeout_arg(parser):
@@ -228,14 +228,15 @@ def add_clusters_arg(parser, required=False):
     """Add ability to select 0 or more clusters to act against"""
     kwargs = {
         'choices': CLUSTERS,
-        'help': (
-            'One or more clusters to target. '
-            'If omitted, this action will be performed against all clusters.'
-        ) if not required else 'One or more clusters to target',
+        'help': 'One or more clusters to target'
+        if required
+        else 'One or more clusters to target. '
+        'If omitted, this action will be performed against all clusters.',
         'nargs': '+',
         'action': UniqueSortedListAction,
-        'required': required
+        'required': required,
     }
+
 
     if not required:
         kwargs['default'] = CLUSTERS
@@ -274,17 +275,16 @@ def add_default_lambda_args(lambda_parser):
     functions = sorted(function_map())
     # optionally allow for the name of 1+ functions being deployed/rolled back
     lambda_parser.add_argument(
-        '-f', '--functions',
+        '-f',
+        '--functions',
         choices=functions,
         default=functions,
         metavar='FUNCTIONS',
-        help=(
-            'One or more of the following functions to perform this action against: {}. '
-            'If omitted, this action will be performed against all functions.'
-        ).format(', '.join(functions)),
+        help=f"One or more of the following functions to perform this action against: {', '.join(functions)}. If omitted, this action will be performed against all functions.",
         nargs='+',
         action=UniqueSortedListAction,
     )
+
 
     # Add the option to specify cluster(s)
     add_clusters_arg(lambda_parser)

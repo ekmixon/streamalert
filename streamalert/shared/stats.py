@@ -63,7 +63,7 @@ class RuleStatisticTracker:
             LOGGER.error('No rule statistics to return')
             return
 
-        max_rule_name_len = max([len(rule) for rule in cls.STATS])
+        max_rule_name_len = max(len(rule) for rule in cls.STATS)
 
         stat_lines = [
             '{rule: <{pad}}{stat}'.format(rule=rule, pad=max_rule_name_len+4, stat=stat)

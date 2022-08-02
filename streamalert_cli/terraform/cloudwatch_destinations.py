@@ -96,7 +96,7 @@ def _generate(cluster_name, cluster_dict, config, account_ids, regions):
                      '\'cloudwatch\' module.')
         return False
 
-    parent_module_name = 'cloudwatch_logs_destination_{}'.format(cluster_name)
+    parent_module_name = f'cloudwatch_logs_destination_{cluster_name}'
 
     prefix = config['global']['account']['prefix']
     stream_arn = '${{module.kinesis_{}.arn}}'.format(cluster_name)
@@ -115,7 +115,7 @@ def _generate(cluster_name, cluster_dict, config, account_ids, regions):
     }
 
     for region in all_regions:
-        module_name = 'cloudwatch_logs_destination_{}_{}'.format(cluster_name, region)
+        module_name = f'cloudwatch_logs_destination_{cluster_name}_{region}'
 
         # Merge these account IDs with any that are already in the configuration
         all_account_ids = set(
@@ -129,12 +129,12 @@ def _generate(cluster_name, cluster_dict, config, account_ids, regions):
             'account_ids': sorted(all_account_ids),
             'destination_kinesis_stream_arn': stream_arn,
             'cloudwatch_logs_subscription_role_arn': (
-                '${{module.{}.cloudwatch_logs_subscription_role_arn}}'.format(parent_module_name)
+                '${{module.{}.cloudwatch_logs_subscription_role_arn}}'.format(
+                    parent_module_name
+                )
             ),
-            'providers': {
-                # use the aliased provider for this region from providers.tf
-                'aws': 'aws.{}'.format(region)
-            },
+            'providers': {'aws': f'aws.{region}'},
         }
+
 
     return True

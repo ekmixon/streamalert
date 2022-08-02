@@ -121,11 +121,7 @@ def _make_kinesis(container):
 
 
 def _make_cache(container):
-    cache = StateManager(
-        logger=container.get('logger')
-    )
-
-    return cache
+    return StateManager(logger=container.get('logger'))
 
 
 def _make_athena(container):
@@ -145,10 +141,10 @@ def _make_query_pack_repo(container):
     repo = QueryPackRepository
 
     config = container.get('config')
-    query_directories = [
-        item
-        for item in config['global']['general'].get('scheduled_query_locations', [])
-    ]
+    query_directories = list(
+        config['global']['general'].get('scheduled_query_locations', [])
+    )
+
 
     repo.load_packs(query_directories)
     return repo

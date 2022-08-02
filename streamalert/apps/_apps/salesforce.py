@@ -109,12 +109,11 @@ class SalesforceApp(AppIntegration):
             'client_id': self._config.auth['client_id'],
             'client_secret': self._config.auth['client_secret'],
             'username': self._config.auth['username'],
-            'password': '{}{}'.format(
-                self._config.auth['password'], self._config.auth['security_token']
-            ),
+            'password': f"{self._config.auth['password']}{self._config.auth['security_token']}",
             'response_type': 'code',
-            'redirect_uri': self._SALESFORCE_TOKEN_URL
+            'redirect_uri': self._SALESFORCE_TOKEN_URL,
         }
+
         success, response = self._make_post_request(
             self._SALESFORCE_TOKEN_URL, headers, data, False
         )
@@ -127,7 +126,7 @@ class SalesforceApp(AppIntegration):
                          self._type())
             return False
 
-        bearer = 'Bearer {}'.format(response.get('access_token'))
+        bearer = f"Bearer {response.get('access_token')}"
         self._auth_headers = {
             'Content-Type': 'application/json',
             'Authorization': bearer
@@ -228,8 +227,8 @@ class SalesforceApp(AppIntegration):
                 later. Otherwise it will return None.
         """
         @backoff.on_exception(backoff.expo,
-                              self.EXCEPTIONS_TO_BACKOFF,
-                              max_tries=self.BACKOFF_MAX_RETRIES)
+                                  self.EXCEPTIONS_TO_BACKOFF,
+                                  max_tries=self.BACKOFF_MAX_RETRIES)
         def _make_get_request():
             # To use closure here is to make backoff logic patchable and testable.
             try:
@@ -239,12 +238,12 @@ class SalesforceApp(AppIntegration):
                 resp = requests.get(full_url, headers=headers, params=params, timeout=self._TIMEOUT)
 
                 # Return false if resp contains non-200 status code.
-                if not self._validate_status_code(resp):
-                    return False, None
+                return (
+                    (True, resp.json())
+                    if self._validate_status_code(resp)
+                    else (False, None)
+                )
 
-                # When querying list of api versions and log files, Salesforce responses
-                # json content.
-                return True, resp.json()
             except requests.exceptions.Timeout:
                 LOGGER.exception('Request timed out for when sending get request to %s', full_url)
                 return False, None
@@ -279,15 +278,14 @@ class SalesforceApp(AppIntegration):
         Returns:
             bool: Return True if get latest api version successfully.
         """
-        url = '{}/services/data/'.format(self._instance_url)
+        url = f'{self._instance_url}/services/data/'
         success, response = self._make_get_request(url, self._auth_headers)
 
         if not (success and response):
             LOGGER.error('Failed to fetch lastest api version')
             return False
 
-        versions = [float(version.get('version', 0)) for version in response]
-        if versions:
+        if versions := [float(version.get('version', 0)) for version in response]:
             self._latest_api_version = str(sorted(versions)[-1])
             if self._latest_api_version == '0.0':
                 LOGGER.error('Failed to obtain latest API version')
@@ -340,8 +338,9 @@ class SalesforceApp(AppIntegration):
             api_version=self._latest_api_version,
             query=self._SALESFORCE_QUERY_FILTERS,
             start_time=self._SALESFORCE_CREATE_AFTER.format(self._last_timestamp),
-            event_type='AND+EventType+=+\'{}\''.format(self._type())
+            event_type=f"AND+EventType+=+\'{self._type()}\'",
         )
+
         success, response = self._make_get_request(url, self._auth_headers)
         if not success:
             LOGGER.error('Failed to get a list of log files.')
@@ -364,7 +363,7 @@ class SalesforceApp(AppIntegration):
         Returns:
             list: a list of event logs or None.
         """
-        url = '{}/{}'.format(self._instance_url, log_file_path)
+        url = f'{self._instance_url}/{log_file_path}'
         try:
             success, resp = self._make_get_request(url, self._auth_headers)
         except SalesforceAppError:

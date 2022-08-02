@@ -144,12 +144,11 @@ class CustomMetricsCommand(CLICommand):
             '--functions',
             choices=available_functions,
             metavar='FUNCTION',
-            help='One or more of the following functions for which to enable metrics: {}'.format(
-                ', '.join(available_functions)
-            ),
+            help=f"One or more of the following functions for which to enable metrics: {', '.join(available_functions)}",
             nargs='+',
-            required=True
+            required=True,
         )
+
 
         # get the metric toggle value
         toggle_group = subparser.add_mutually_exclusive_group(required=True)

@@ -55,10 +55,11 @@ def generate_rule_promotion(config):
 
     # Set variables for the Lambda module
     result['module']['rule_promotion_lambda'] = generate_lambda(
-        '{}_streamalert_{}'.format(config['global']['account']['prefix'], RULE_PROMOTION_NAME),
+        f"{config['global']['account']['prefix']}_streamalert_{RULE_PROMOTION_NAME}",
         'streamalert.rule_promotion.main.handler',
         config['lambda']['rule_promotion_config'],
-        config
+        config,
     )
+
 
     return result

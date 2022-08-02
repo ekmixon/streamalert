@@ -143,7 +143,7 @@ class TestLambdaOutput:
     @patch('logging.Logger.info')
     def test_dispatch_with_qualifier(self, log_mock):
         """LambdaOutput - Dispatch Success, With Qualifier"""
-        alt_descriptor = '{}_qual'.format(self.DESCRIPTOR)
+        alt_descriptor = f'{self.DESCRIPTOR}_qual'
 
         assert_true(
             self._dispatcher.dispatch(get_alert(), ':'.join([self.SERVICE, alt_descriptor])))
@@ -435,7 +435,7 @@ class TestSESOutput:
         payloads = msg.get_payload()
         for payload in payloads:
             if isinstance(payload, MIMEApplication):
-                assert_true(payload.get_filename() in attachments.keys())
+                assert_true(payload.get_filename() in attachments)
 
     def test_override_default_body_string(self):
         """SESOutput - Override body string"""

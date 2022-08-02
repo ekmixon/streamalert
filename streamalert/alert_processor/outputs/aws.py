@@ -144,7 +144,7 @@ class KinesisFirehoseOutput(AWSOutput):
 
         json_alert = json.dumps(publication, separators=(',', ':')) + '\n'
         if len(json_alert) > self.MAX_RECORD_SIZE:
-            LOGGER.error('Alert too large to send to Firehose: \n%s...', json_alert[0:1000])
+            LOGGER.error('Alert too large to send to Firehose: \n%s...', json_alert[:1000])
             return False
 
         delivery_stream = self.config[self.__service__][descriptor]
@@ -232,7 +232,7 @@ class LambdaOutput(AWSOutput):
         # Checking the length of the list for 2 or 8 should account for all
         # times a qualifier is provided.
         parts = function_name.split(':')
-        if len(parts) == 2 or len(parts) == 8:
+        if len(parts) in {2, 8}:
             function = parts[-2]
             qualifier = parts[-1]
         else:
@@ -394,8 +394,7 @@ class LambdaOutputV2(OutputDispatcher):
             'region_name': self.region
         }
 
-        assume_role_arn = creds.get('assume_role_arn', False)
-        if assume_role_arn:
+        if assume_role_arn := creds.get('assume_role_arn', False):
             LOGGER.debug('Assuming role: %s', assume_role_arn)
             sts_connection = boto3.client('sts')
             acct_b = sts_connection.assume_role(
@@ -466,13 +465,8 @@ class S3Output(AWSOutput):
         # Produces the following key format:
         #   alerts/dt=2017-01-25-00/kinesis_my-stream_my-rule_uuid.json
         # Keys need to be unique to avoid object overwriting
-        key = 'alerts/dt={}/{}_{}_{}_{}.json'.format(
-            datetime.now().strftime('%Y-%m-%d-%H'),
-            alert.source_service,
-            alert.source_entity,
-            alert.rule_name,
-            uuid.uuid4()
-        )
+        key = f"alerts/dt={datetime.now().strftime('%Y-%m-%d-%H')}/{alert.source_service}_{alert.source_entity}_{alert.rule_name}_{uuid.uuid4()}.json"
+
 
         LOGGER.debug('Sending %s to S3 bucket %s with key %s', alert, bucket, key)
 
@@ -524,13 +518,13 @@ class SNSOutput(AWSOutput):
         """
         # SNS topics can only be accessed via their ARN
         topic_name = self.config[self.__service__][descriptor]
-        topic_arn = 'arn:aws:sns:{}:{}:{}'.format(self.region, self.account_id, topic_name)
+        topic_arn = f'arn:aws:sns:{self.region}:{self.account_id}:{topic_name}'
         topic = boto3.resource('sns', region_name=self.region).Topic(topic_arn)
 
         publication = compose_alert(alert, self, descriptor)
 
         # Presentation defaults
-        default_subject = '{} triggered alert {}'.format(alert.rule_name, alert.alert_id)
+        default_subject = f'{alert.rule_name} triggered alert {alert.alert_id}'
         default_message = json.dumps(publication, indent=2, sort_keys=True)
 
         # Published presentation fields
@@ -705,9 +699,7 @@ class SESOutput(OutputDispatcher):
         """
 
         # Presentation defaults
-        default_subject = "{} triggered alert {}".format(
-            alert.rule_name, alert.alert_id
-        )
+        default_subject = f"{alert.rule_name} triggered alert {alert.alert_id}"
         default_body = "Please review the attached record.json"
 
         # Presentation values

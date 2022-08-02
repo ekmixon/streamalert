@@ -52,7 +52,7 @@ class Summary(AlertPublisher):
             '@slack.text': 'Rule triggered',
             '@slack.attachments': [
                 {
-                    'fallback': 'Rule triggered: {}'.format(rule_name),
+                    'fallback': f'Rule triggered: {rule_name}',
                     'color': self._color(),
                     'author_name': author,
                     'author_link': self._author_url(author),
@@ -64,12 +64,12 @@ class Summary(AlertPublisher):
                     'thumb_url': '',
                     'footer': '',
                     'footer_icon': '',
-                    'ts': calendar.timegm(alert.created.timetuple()) if alert.created else '',
+                    'ts': calendar.timegm(alert.created.timetuple())
+                    if alert.created
+                    else '',
                     'mrkdwn_in': [],
-                },
+                }
             ],
-
-            # This information is passed-through to future publishers.
             '@slack._previous_publication': publication,
         }
 
@@ -102,9 +102,7 @@ class Summary(AlertPublisher):
         return '{}{}?{}'.format(
             cls._GITHUB_REPO_URL,
             cls._SEARCH_PATH,
-            urllib.parse.urlencode({
-                'q': '{} path:{}'.format(rule_name, cls._RULES_PATH)
-            })
+            urllib.parse.urlencode({'q': f'{rule_name} path:{cls._RULES_PATH}'}),
         )
 
 
@@ -317,7 +315,7 @@ class AttachFullRecord(AlertPublisher):
     @staticmethod
     def _source_service_url(source_service):
         """A best-effort guess at the AWS dashboard link for the requested service."""
-        return 'https://console.aws.amazon.com/{}/home'.format(source_service)
+        return f'https://console.aws.amazon.com/{source_service}/home'
 
     @staticmethod
     def _footer_icon_from_service(_):

@@ -91,7 +91,7 @@ class EventsV2DataProvider:
         publication = compose_alert(alert, self, descriptor)
 
         # Presentation defaults
-        default_summary = 'StreamAlert Rule Triggered - {}'.format(alert.rule_name)
+        default_summary = f'StreamAlert Rule Triggered - {alert.rule_name}'
         default_custom_details = OrderedDict()
         default_custom_details['description'] = alert.rule_description
         if with_record:
@@ -112,7 +112,7 @@ class EventsV2DataProvider:
         # We namespace the dedup_key by the descriptor, preventing situations where a single
         # alert sending to multiple PagerDuty services from having colliding dedup_keys, which
         # would PROBABLY be ok (because of segregated environments) but why take the risk?
-        dedup_key = '{}:{}'.format(descriptor, alert.alert_id)
+        dedup_key = f'{descriptor}:{alert.alert_id}'
 
         # Structure: https://v2.developer.pagerduty.com/docs/send-an-event-events-api-v2
         return {
@@ -152,20 +152,21 @@ class EventsV2DataProvider:
             - href: A URL that the image opens when clicked (Optional)
             - alt: Alt text (Optional)
         """
-        if not isinstance(images, list):
-            return []
-
-        return [
-            {
-                # Notably, if href is provided but is an invalid URL, the entire image will
-                # be entirely omitted from the incident... beware.
-                'src': image['src'],
-                'href': image['href'] if 'href' in image else '',
-                'alt': image['alt'] if 'alt' in image else '',
-            }
-            for image in images
-            if isinstance(image, dict) and 'src' in image
-        ]
+        return (
+            [
+                {
+                    # Notably, if href is provided but is an invalid URL, the entire image will
+                    # be entirely omitted from the incident... beware.
+                    'src': image['src'],
+                    'href': image['href'] if 'href' in image else '',
+                    'alt': image['alt'] if 'alt' in image else '',
+                }
+                for image in images
+                if isinstance(image, dict) and 'src' in image
+            ]
+            if isinstance(images, list)
+            else []
+        )
 
     @staticmethod
     def _standardize_links(links):
@@ -175,17 +176,18 @@ class EventsV2DataProvider:
            - href: A URL of the link
            - text: Text of the link (Optional: Defaults to the href if no text given)
         """
-        if not isinstance(links, list):
-            return []
-
-        return [
-            {
-                'href': link['href'],
-                'text': link['text'] if 'text' in link else link['href'],
-            }
-            for link in links
-            if isinstance(link, dict) and 'href' in link
-        ]
+        return (
+            [
+                {
+                    'href': link['href'],
+                    'text': link['text'] if 'text' in link else link['href'],
+                }
+                for link in links
+                if isinstance(link, dict) and 'href' in link
+            ]
+            if isinstance(links, list)
+            else []
+        )
 
 
 @StreamAlertOutput
@@ -287,7 +289,7 @@ class PagerDutyOutput(OutputDispatcher):
             return False
 
         # Presentation defaults
-        default_description = 'StreamAlert Rule Triggered - {}'.format(alert.rule_name)
+        default_description = f'StreamAlert Rule Triggered - {alert.rule_name}'
         default_details = {
             'description': alert.rule_description,
             'record': alert.record,
@@ -316,7 +318,7 @@ class PagerDutyOutput(OutputDispatcher):
             return []
 
         def is_valid_context(context):
-            if not 'type' in context:
+            if 'type' not in context:
                 return False
 
             if context['type'] == 'link':
@@ -409,10 +411,7 @@ class PagerDutyOutputV2(OutputDispatcher, EventsV2DataProvider):
 
         result = client.enqueue_event(data)
 
-        if result is False:
-            return False
-
-        return True
+        return result is not False
 
 
 @StreamAlertOutput
@@ -676,21 +675,16 @@ class WorkContext:
                     responder_message
                 )
                 if not result:
-                    error = '[{}] Failed to request a responder ({}) on incident ({})'.format(
-                        self._output.__service__,
-                        responder_email,
-                        incident_id
-                    )
+                    error = f'[{self._output.__service__}] Failed to request a responder ({responder_email}) on incident ({incident_id})'
+
                     LOGGER.error(error)
                     errors.append(error)
 
         # Add a note to the incident
         note = self._add_incident_note(incident_id, publication, rule_context)
         if not note:
-            error = '[{}] Failed to add note to incident ({})'.format(
-                self._output.__service__,
-                incident_id
-            )
+            error = f'[{self._output.__service__}] Failed to add note to incident ({incident_id})'
+
             LOGGER.error(error)
             errors.append(error)
 
@@ -701,7 +695,7 @@ class WorkContext:
         return True
 
     def _add_instability_note(self, incident_id, errors):
-        error_section = '\n'.join(['- {}'.format(err) for err in errors])
+        error_section = '\n'.join([f'- {err}' for err in errors])
         instability_note = '''
 StreamAlert failed to correctly setup this incident. Please contact your StreamAlert administrator.
 
@@ -751,7 +745,10 @@ Errors:
         """
 
         # Presentation defaults
-        default_incident_title = 'StreamAlert Incident - Rule triggered: {}'.format(alert.rule_name)
+        default_incident_title = (
+            f'StreamAlert Incident - Rule triggered: {alert.rule_name}'
+        )
+
         default_incident_body = alert.rule_description
         default_urgency = None  # Assumes the default urgency on the service referenced
 
@@ -802,12 +799,10 @@ Errors:
             }
         }
 
-        incident_priority = self._get_standardized_priority(rule_context)
-        if incident_priority:
+        if incident_priority := self._get_standardized_priority(rule_context):
             incident_data['incident']['priority'] = incident_priority
 
-        assignments = self._get_incident_assignments(rule_context)
-        if assignments:
+        if assignments := self._get_incident_assignments(rule_context):
             incident_data['incident']['assignments'] = assignments
         else:
             # Important detail;
@@ -831,10 +826,7 @@ Errors:
 
     def _get_incident_assignments(self, rule_context):
         assignments = False
-        user_to_assign = rule_context.get('assigned_user', False)
-
-        # If provided, verify the user and get the id from API
-        if user_to_assign:
+        if user_to_assign := rule_context.get('assigned_user', False):
             user = self._api_client.get_user_by_email(user_to_assign)
             if user and user.get('id'):
                 assignments = [{'assignee': {
@@ -916,11 +908,11 @@ Errors:
             )
         )
 
-        if not incident_note:
-            # Simply return early without adding a note; no need to add a blank one
-            return True
-
-        return bool(self._api_client.add_note(incident_id, incident_note))
+        return (
+            bool(self._api_client.add_note(incident_id, incident_note))
+            if incident_note
+            else True
+        )
 
     @backoff.on_exception(backoff.constant,
                           PagerdutySearchDelay,
@@ -946,11 +938,10 @@ Errors:
         if not incident_key:
             return False
 
-        event_incident = self._api_client.get_incident_by_key(incident_key)
-        if not event_incident:
+        if event_incident := self._api_client.get_incident_by_key(incident_key):
+            return event_incident.get('id')
+        else:
             raise PagerdutySearchDelay('Received no PagerDuty response')
-
-        return event_incident.get('id')
 
     def _verify_user_exists(self):
         """Verifies that the 'email_from' provided in the creds is valid and exists."""
@@ -989,21 +980,24 @@ Errors:
         if not priority_name:
             return False
 
-        priorities = self._api_client.get_priorities()
+        if priorities := self._api_client.get_priorities():
+            return (
+                {'id': priority_id, 'type': 'priority_reference'}
+                if (
+                    priority_id := next(
+                        (
+                            item
+                            for item in priorities
+                            if item["name"] == priority_name
+                        ),
+                        {},
+                    ).get('id', False)
+                )
+                else False
+            )
 
-        if not priorities:
+        else:
             return False
-
-        # If the requested priority is in the list, get the id
-        priority_id = next(
-            (item for item in priorities if item["name"] == priority_name), {}
-        ).get('id', False)
-
-        # If the priority id is found, compose the JSON
-        if priority_id:
-            return {'id': priority_id, 'type': 'priority_reference'}
-
-        return False
 
 
 # pylint: disable=protected-access
@@ -1027,10 +1021,7 @@ class JsonHttpProvider:
             return False
 
         response = result.json()
-        if not response:
-            return False
-
-        return response
+        return response or False
 
     def post(self, url, data, headers=None, verify=False):
         """Returns the JSON response of the given request, or FALSE on failure"""
@@ -1041,10 +1032,7 @@ class JsonHttpProvider:
             return False
 
         response = result.json()
-        if not response:
-            return False
-
-        return response
+        return response or False
 
     def put(self, url, params, headers=None, verify=False):
         """Returns the JSON response of the given request, or FALSE on failure"""
@@ -1055,10 +1043,7 @@ class JsonHttpProvider:
             return False
 
         response = result.json()
-        if not response:
-            return False
-
-        return response
+        return response or False
 
 
 class SslVerifiable:
@@ -1105,7 +1090,7 @@ class PagerDutyRestApiClient(SslVerifiable):
         self._authorization_token = authorization_token
         self._user_email = user_email
         self._http_provider = http_provider  # type: JsonHttpProvider
-        self._base_url = url if url else self.REST_API_BASE_URL
+        self._base_url = url or self.REST_API_BASE_URL
 
     def get_user_by_email(self, user_email):
         """Fetches a pagerduty user by an email address.
@@ -1161,10 +1146,7 @@ class PagerDutyRestApiClient(SslVerifiable):
         )
         self._update_ssl_verified(priorities)
 
-        if not priorities:
-            return False
-
-        return priorities.get('priorities', [])
+        return priorities.get('priorities', []) if priorities else False
 
     def get_escalation_policy_by_id(self, escalation_policy_id):
         """Given an escalation policy id, returns the resource
@@ -1209,10 +1191,7 @@ class PagerDutyRestApiClient(SslVerifiable):
         )
         self._update_ssl_verified(incident)
 
-        if not incident:
-            return False
-
-        return incident.get('incident', False)
+        return incident.get('incident', False) if incident else False
 
     def add_note(self, incident_id, note):
         """Method to add a text note to the provided incident id
@@ -1239,10 +1218,7 @@ class PagerDutyRestApiClient(SslVerifiable):
         )
         self._update_ssl_verified(note)
 
-        if not note:
-            return False
-
-        return note.get('note', False)
+        return note.get('note', False) if note else False
 
     def request_responder(self, incident_id, requester_user_id, message, responder_user_id):
         # Be very careful with this API endpoint, there are several things you will need to know:
@@ -1271,10 +1247,11 @@ class PagerDutyRestApiClient(SslVerifiable):
         )
         self._update_ssl_verified(responder_request)
 
-        if not responder_request:
-            return False
-
-        return responder_request.get('responder_request', False)
+        return (
+            responder_request.get('responder_request', False)
+            if responder_request
+            else False
+        )
 
     def _construct_headers(self, omit_email=False):
         """Returns a dict containing all headers to send for PagerDuty requests
@@ -1285,9 +1262,10 @@ class PagerDutyRestApiClient(SslVerifiable):
         """
         headers = {
             'Accept': 'application/vnd.pagerduty+json;version=2',
-            'Authorization': 'Token token={}'.format(self._authorization_token),
+            'Authorization': f'Token token={self._authorization_token}',
             'Content-Type': 'application/json',
         }
+
         if not omit_email:
             headers['From'] = self._user_email
 
@@ -1333,7 +1311,7 @@ class PagerDutyEventsV2ApiClient(SslVerifiable):
 
         self._http_provider = http_provider  # type: JsonHttpProvider
         self._enqueue_endpoint = (
-            enqueue_endpoint if enqueue_endpoint else self.EVENTS_V2_API_ENQUEUE_ENDPOINT
+            enqueue_endpoint or self.EVENTS_V2_API_ENQUEUE_ENDPOINT
         )
 
     def enqueue_event(self, event_data):
@@ -1355,10 +1333,7 @@ class PagerDutyEventsV2ApiClient(SslVerifiable):
         return event
 
     def _get_event_enqueue_v2_url(self):
-        if self._enqueue_endpoint:
-            return self._enqueue_endpoint
-
-        return '{}'.format(self.EVENTS_V2_API_ENQUEUE_ENDPOINT)
+        return self._enqueue_endpoint or f'{self.EVENTS_V2_API_ENQUEUE_ENDPOINT}'
 
 
 class PagerDutyEventsV1ApiClient(SslVerifiable):
@@ -1380,7 +1355,7 @@ class PagerDutyEventsV1ApiClient(SslVerifiable):
 
         self._service_key = service_key
         self._http_provider = http_provider #  type: JsonHttpProvider
-        self._api_endpoint = api_endpoint if api_endpoint else self.EVENTS_V1_API_ENDPOINT
+        self._api_endpoint = api_endpoint or self.EVENTS_V1_API_ENDPOINT
 
     def send_event(self, incident_description, incident_details, contexts, client_url=''):
         """

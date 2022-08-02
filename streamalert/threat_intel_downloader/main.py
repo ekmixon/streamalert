@@ -96,10 +96,10 @@ class ThreatStream:
         try:
             decoded_creds = json.loads(response['Parameter']['Value'])
         except ValueError:
-            raise ThreatStreamCredsError('Cannot load value for parameter with name '
-                                         '\'{}\'. The value is not valid json: '
-                                         '\'{}\''.format(response['Parameter']['Name'],
-                                                         response['Parameter']['Value']))
+            raise ThreatStreamCredsError(
+                f"Cannot load value for parameter with name \'{response['Parameter']['Name']}\'. The value is not valid json: \'{response['Parameter']['Value']}\'"
+            )
+
 
         self.api_user = decoded_creds['api_user']
         self.api_key = decoded_creds['api_key']
@@ -121,8 +121,8 @@ class ThreatStream:
             next_url (str): url of next token to retrieve more objects from
                 ThreatStream
         """
-        intelligence = list()
-        https_req = requests.get('{}{}'.format(self._API_URL, next_url), timeout=10)
+        intelligence = []
+        https_req = requests.get(f'{self._API_URL}{next_url}', timeout=10)
 
         next_url = None
         if https_req.status_code == 200:
@@ -142,7 +142,9 @@ class ThreatStream:
             raise ThreatStreamRequestsError('Response status code 500, retry now.')
         else:
             raise ThreatStreamRequestsError(
-                'Unknown status code {}, do not retry.'.format(https_req.status_code))
+                f'Unknown status code {https_req.status_code}, do not retry.'
+            )
+
 
         self._finalize(intelligence, next_url)
 
@@ -179,7 +181,7 @@ class ThreatStream:
                 Qualifier=self._config['qualifier']
             )
         except ClientError as err:
-            raise ThreatStreamLambdaInvokeError('Error invoking function: {}'.format(err))
+            raise ThreatStreamLambdaInvokeError(f'Error invoking function: {err}')
 
     @staticmethod
     def _epoch_time(time_str, days=90):
@@ -246,7 +248,7 @@ class ThreatStream:
                         }
                     ]
         """
-        results = list()
+        results = []
         for obj in data:
             for source in self.ioc_sources:
                 if source in obj['source'].lower():
@@ -297,19 +299,15 @@ class ThreatStream:
 
         query = '(status="{}")+AND+({})+AND+NOT+({})'.format(
             self._IOC_STATUS,
-            "+OR+".join(['type="{}"'.format(ioc) for ioc in self.ioc_types]),
-            "+OR+".join(['itype="{}"'.format(itype) for itype in self.excluded_sub_types])
+            "+OR+".join([f'type="{ioc}"' for ioc in self.ioc_types]),
+            "+OR+".join([f'itype="{itype}"' for itype in self.excluded_sub_types]),
         )
+
         next_url = event.get(
             'next_url',
-            '/api/v2/{}/?username={}&api_key={}&limit={}&q={}'.format(
-                self._API_RESOURCE,
-                self.api_user,
-                self.api_key,
-                self._API_MAX_LIMIT,
-                query
-            )
+            f'/api/v2/{self._API_RESOURCE}/?username={self.api_user}&api_key={self.api_key}&limit={self._API_MAX_LIMIT}&q={query}',
         )
+
 
         self._connect(next_url)
 
